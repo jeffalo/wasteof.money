@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="/style.css">
+    <script src="https://code.iconify.design/1/1.0.7/iconify.min.js"></script>
+</head>
+
+<body>
+    <%- include('../partials/nav.ejs', {active: "login", user}); %>
+    <main>
+        <h1>login</h1>
+        <p>welcome back!</p>
+        <div class="message" id='msg' style="display: none;">you shouldn't see this, if you do then something must have gone pretty wrong la la la no one will ever see this hopefully asdfdgfhgjhkj</div>
+        <form class='form-inline' autocomplete="off" id='form'>
+            <label for="username">username:</label><input name="username" id='username' type="text">
+            <label for="password">password:</label><input name="password" id='password' type="password">
+            <input type="submit" value="login">
+        </form>
+    </main>
+</body>
+<script src="/nav.js"></script>
+
+<script>
+    var form = document.getElementById('form')
+    form.addEventListener('submit', e => {
+        e.preventDefault()
+        var username = document.getElementById('username').value
+        var password = document.getElementById('password').value
+        login(username,password)
+    })
+
+    async function login(username, password) {
+        var res = await fetch('/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ username, password })
+        })
+        var data = await res.json()
+        if (data.ok) {
+            document.location.href = '/'
+        } else {
+            document.getElementById('msg').style.display = 'block'
+            document.getElementById('msg').innerText = data.error
+        }
+    }
+</script>
+
+</html>

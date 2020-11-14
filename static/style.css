@@ -1,0 +1,148 @@
+:root {
+    --dark: #12121aff;
+    --dark-light: #313144;
+    --brand: #5555fcff;
+    --brand-light: #6666ff;
+    --brand-lighter: #8282ff;
+}
+
+html, body {
+    background-color: var(--dark);
+    color: white;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    margin: 0;
+}
+
+main {
+    margin: 10px;
+}
+
+ul.striped-list {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+ul.striped-list > li {
+    padding: 6px;
+}
+
+
+ul.striped-list > li:nth-of-type(odd) {
+    background-color: var(--dark-light)
+}
+
+a {
+    color: var(--brand-light);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+form {
+    display: flex;
+    flex-flow: row wrap;
+    align-items: center;
+}
+
+form label {
+    margin: 5px 10px 5px 0;
+}
+
+form input {
+    vertical-align: middle;
+    margin: 5px 10px 5px 0;
+    padding: 10px;
+    background-color: var(--dark-light);
+    color: white;
+    border: none;
+}
+
+form input[name=code]{
+    width: 30%;
+}
+
+form input[type=submit] {
+    padding: 10px 20px;
+    background-color: var(--brand);
+    border: none;
+    color: white;
+    cursor: pointer;
+}
+
+.topnav {
+    overflow: hidden;
+    background-color: var(--brand);
+}
+
+.topnav a {
+    float: left;
+    display: block;
+    color: #f2f2f2;
+    text-align: center;
+    padding: 12px 16px;
+    text-decoration: none;
+    font-size: 17px;
+    transition: 250ms;
+}
+
+.topnav a:hover {
+    background-color: var(--brand-light);
+}
+
+.topnav a.active {
+    background-color: var(--brand-light);
+    color: white;
+}
+
+.topnav .icon {
+    display: none;
+}
+
+.topnav .right {
+    float: right;
+}
+
+.message{
+    padding: 10px;
+    background-color: var(--brand);
+    color: white;
+    margin-bottom: 15px;
+}
+
+@media screen and (max-width: 600px) {
+    .signout::after{
+        content: ' Sign out'
+    }
+    .topnav a:not(:first-child) {
+        display: none;
+    }
+    .topnav a.icon {
+        display: block;
+    }
+    .topnav.responsive {
+        position: relative;
+    }
+    .topnav.responsive .icon {
+        position: absolute;
+        right: 0;
+        top: 0;
+    }
+    .topnav.responsive a {
+        float: none;
+        display: block;
+        text-align: left;
+    }
+    .form-inline input {
+        margin: 10px 0;
+    }
+    .form-inline {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    form input[name=code]{
+        width: auto;
+    }
+}

@@ -1,0 +1,16 @@
+<nav class="topnav" id="myTopnav">
+    <a class="item <%= active=='home' ? 'active' : '' %>" href="/">Home</a>
+    <a class="item <%= active=='explore' ? 'active' : '' %>" href="/explore">Explore</a>
+
+    <%if (user) { %>
+        <a href="/logout" class="item right signout"><span class="iconify" data-icon="uil:exit"></span></a>
+        <a href="/users/<%= user.username %>" class="item right"><%= user.username %> </a>
+    <% } else { %>
+        <a class="item <%= active=='login' ? 'active' : '' %> right" href="/login">Sign in</a>
+        <a class="item <%= active=='join' ? 'active' : '' %> right" href="/join">Join</a>
+    <% } %>
+
+    <a href="javascript:void(0);" class="icon right" onclick="menu()">
+        <span class="iconify" data-icon="uil:bars"></span>
+    </a>
+</nav>
