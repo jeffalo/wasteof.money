@@ -180,6 +180,22 @@ app.get('/users/:user', async function (req, res) {
     }
 })
 
+app.post('/post', async function (req, res){
+    var userCookie = req.cookies.token
+    var user = findUser(userCookie)
+
+    if(user){
+        posts.insert({content: req.body.post, poster: user.username})
+        .then(post=>{
+            res.json({ok: 'made post', id:post._id})
+        })
+        .catch(err=>{
+            res.json({error: 'uncaught error'})
+            console.error(error)
+        })
+    }
+})
+
 function findUser(token) {
     var user = tokens.find(t => t.token == token)
     return user

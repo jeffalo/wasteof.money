@@ -1,13 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <link rel="stylesheet" href="/style.css">
-    <script src="https://code.iconify.design/1/1.0.7/iconify.min.js"></script>
-</head>
+<%- include('../partials/head.ejs', {page: "join"}); %>
+
 
 <body>
     <%- include('../partials/nav.ejs', {active: "join", user}); %>
@@ -22,7 +17,8 @@
         </form>
     </main>
 </body>
-<script src="/nav.js"></script>
+
+<%- include('../partials/scripts.ejs'); %>
 
 <script>
     var form = document.getElementById('form')
