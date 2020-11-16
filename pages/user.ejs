@@ -9,9 +9,33 @@
     <main>
         <h1><%= user.name %></h1>
         <p>id: <%= user._id %></p>
+        <ul class="posts">
+            <% posts.forEach(post => { %>
+                <li id='post_<%= post._id %>'>
+                    <div class='poster'>
+                        <img src="/picture/<%= post.poster %>" height="30px" class='profile-picture'>
+                        @<%= post.poster %>
+                    </div>
+                    <div class="post-content">
+                        <%= post.content %>       
+                        <div class="post-footer">
+                            <%= new Date(post.time).toLocaleDateString("en-US") + ' ' + new Date(post.time).toLocaleTimeString("en-US") %> 
+                        </div>
+                    </div>
+                </li>
+            <% }) %>
+        </ul>
     </main>
 </body>
 
 <%- include('../partials/scripts.ejs'); %>
-
+<script>
+    if(document.location.hash){
+        var postEl = document.getElementById(document.location.hash.split('#')[1])
+        postEl.style.backgroundColor = 'var(--brand-lighter)'
+        setTimeout(function(){
+            postEl.style.backgroundColor = ''
+        },2000)
+    }
+</script>
 </html>

@@ -3,6 +3,7 @@ const ejs = require('ejs')
 var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
 var bcrypt = require('bcrypt');
+const fs = require('fs')
 
 const app = express()
 
@@ -132,6 +133,7 @@ app.post('/join', async function (req, res) {
         bcrypt.hash(password, saltRounds, async function (err, hashedPassword) {
             users.insert({ name: username, password: hashedPassword })
                 .then(user => {
+                    console.log(user)
                     var token = makeID(20)
                     tokens.push({ username: user.name, token: token })
                     res.cookie('token', token)
@@ -164,37 +166,58 @@ app.get('/users', function (req, res) {
     })
 })
 
-app.get('/users/:user', async function (req, res) {
+app.get('/users/:user', async function (req, res, next) {
     var userCookie = req.cookies.token
     var loggedInUser = findUser(userCookie)
 
-    var user = await users.findOne({name: req.params.user})
-
-    if(user){
-        ejs.renderFile(__dirname + '/pages/user.ejs', { user, loggedInUser }, (err, str) => {
+    var user = await users.findOne({ name: req.params.user })
+    var userPosts = await posts.find({ poster: req.params.user })
+    userPosts.reverse()
+    if (user) {
+        ejs.renderFile(__dirname + '/pages/user.ejs', { user, loggedInUser, posts: userPosts }, (err, str) => {
             if (err) console.log(err)
             res.send(str)
         })
     } else {
-        res.send(404)
+        next() //go to next
     }
 })
 
-app.post('/post', async function (req, res){
+app.get('/picture/:user', async function (req, res, next) {
+    if(fs.existsSync(`./uploads/profiles/${req.params.user}.png`)){
+        res.sendFile(__dirname+`/uploads/profiles/${req.params.user}.png`)
+    } else {
+        res.sendFile(__dirname+'/static/default.jpg')
+    }
+})
+
+app.get('/posts/:post', async function (req, res) {
+    var post = await posts.findOne({ _id:req.params.post })
+    res.redirect(`/users/${post.poster}#post_${post._id}`)
+})
+
+app.post('/post', async function (req, res) {
     var userCookie = req.cookies.token
     var user = findUser(userCookie)
 
-    if(user){
-        posts.insert({content: req.body.post, poster: user.username})
-        .then(post=>{
-            res.json({ok: 'made post', id:post._id})
-        })
-        .catch(err=>{
-            res.json({error: 'uncaught error'})
-            console.error(error)
-        })
+    if (user) {
+        posts.insert({ content: req.body.post, poster: user.username, time: Date.now() })
+            .then(post => {
+                res.json({ ok: 'made post', id: post._id })
+            })
+            .catch(err => {
+                res.json({ error: 'uncaught error' })
+                console.error(error)
+            })
     }
 })
+
+app.use((req, res,next)=>{ //ALWAYS SHOULD BE LAST
+    res.status(404).send(`
+    <h1>not found</h1>
+    404 - some text about page not being found
+    `);
+ });
 
 function findUser(token) {
     var user = tokens.find(t => t.token == token)

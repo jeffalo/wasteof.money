@@ -4,6 +4,8 @@
     --brand: #5555fcff;
     --brand-light: #6666ff;
     --brand-lighter: #8282ff;
+
+    --super-light: #dadaff;
 }
 
 html, body {
@@ -14,7 +16,7 @@ html, body {
 }
 
 main {
-    margin: 10px;
+    margin: 50px 10px 30px 10px;
 }
 
 .topnav{
@@ -25,6 +27,10 @@ main {
     box-shadow: 0 0 13px 0px var(--brand);
     border-bottom-left-radius: 10px;
     border-bottom-right-radius: 10px;
+
+    position: fixed;
+    top: 0;
+    width: 100%;
 }
 
 .topnav .item{
@@ -36,6 +42,10 @@ main {
 }
 .topnav>.item.signout::after{
     content: ' Sign out'
+}
+
+.topnav>.item.settings::after{
+    content: ' Settings'
 }
 
 ul.striped-list {
@@ -51,6 +61,38 @@ ul.striped-list > li {
 
 ul.striped-list > li:nth-of-type(odd) {
     background-color: var(--dark-light)
+}
+
+.posts{
+    list-style: none;
+    padding: 0;
+    margin: 0 5%;
+}
+
+.posts li{
+    background-color: var(--super-light);
+    color: black;
+    padding: 20px;
+    border-radius: 10px;
+    margin-top: 20px;
+}
+
+.poster{
+    display: block;
+}
+
+.profile-picture{
+    border-radius: 50%;
+    vertical-align: middle;
+    box-shadow: 0 0 7px 0px #0000003b;
+}
+
+.post-content{
+    margin-left: 35px;
+}
+
+.post-footer{
+    font-style: italic;
 }
 
 a {
@@ -110,7 +152,7 @@ form input[type=submit] {
     width: 50px;
     height: 50px;
 
-    position: absolute;
+    position: fixed;
     bottom: 10px;
     right: 10px;
 
@@ -134,6 +176,9 @@ form input[type=submit] {
     }
 
     .topnav>.item.signout::after{
+        content: ''
+    }
+    .topnav>.item.settings::after{
         content: ''
     }
 }

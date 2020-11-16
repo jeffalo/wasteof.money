@@ -12,7 +12,6 @@ if (postbutton) {
     })
 
     if (text) {
-      Swal.fire(text)
       post(text)
     }
   })
@@ -31,4 +30,7 @@ async function post(text) {
   })
   var postjson = await postres.json()
   console.log(postjson)
+  if(postjson.ok){
+    document.location.href = `/posts/${postjson.id}`
+  }
 }
