@@ -173,8 +173,12 @@ app.get('/users/:user', async function (req, res, next) {
     var user = await users.findOne({ name: req.params.user })
     var userPosts = await posts.find({ poster: req.params.user })
     userPosts.reverse()
+
+    var post = req.query.post
+    console.log(post)
+
     if (user) {
-        ejs.renderFile(__dirname + '/pages/user.ejs', { user, loggedInUser, posts: userPosts }, (err, str) => {
+        ejs.renderFile(__dirname + '/pages/user.ejs', { user, loggedInUser, posts: userPosts, activePost:post }, (err, str) => {
             if (err) console.log(err)
             res.send(str)
         })
@@ -193,7 +197,7 @@ app.get('/picture/:user', async function (req, res, next) {
 
 app.get('/posts/:post', async function (req, res) {
     var post = await posts.findOne({ _id:req.params.post })
-    res.redirect(`/users/${post.poster}#post_${post._id}`)
+    res.redirect(`/users/${post.poster}?post=${post._id}`)
 })
 
 app.post('/post', async function (req, res) {

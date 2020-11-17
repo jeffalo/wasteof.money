@@ -5,17 +5,24 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon index.js",
-    "serve": "node index.js"
+    "serve": "node index.js",
+    "tailwind:css": "postcss static/tailwind.css -o static/style.css"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "autoprefixer": "^10.0.2",
     "bcrypt": "^5.0.0",
     "cookie-parser": "^1.4.5",
     "dotenv": "^8.2.0",
     "ejs": "^3.1.5",
     "express": "^4.17.1",
-    "monk": "^7.3.2"
+    "monk": "^7.3.2",
+    "postcss": "^8.1.7",
+    "postcss-cli": "^8.3.0"
+  },
+  "devDependencies": {
+    "tailwindcss": "^1.9.6"
   }
 }

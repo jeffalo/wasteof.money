@@ -6,16 +6,72 @@
 
 <body>
     <%- include('../partials/nav.ejs', {active: "login", user}); %>
-    <main>
-        <h1>login</h1>
-        <p>welcome back!</p>
-        <div class="message" id='msg' style="display: none;">you shouldn't see this, if you do then something must have gone pretty wrong la la la no one will ever see this hopefully asdfdgfhgjhkj</div>
-        <form class='form-inline' autocomplete="off" id='form'>
-            <label for="username">username:</label><input name="username" id='username' type="text">
-            <label for="password">password:</label><input name="password" id='password' type="password">
-            <input type="submit" value="login">
-        </form>
-    </main>
+    <!--
+  Tailwind UI components require Tailwind CSS v1.8 and the @tailwindcss/ui plugin.
+  Read the documentation to get started: https://tailwindui.com/documentation
+-->
+    <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-md w-full">
+            <div>
+                <img class="mx-auto h-20 w-auto" src="/logo.svg"
+                    alt="Workflow">
+                <h2 class="mt-6 text-center text-3xl leading-9 font-extrabold text-gray-900">
+                    Sign in to your account
+                </h2>
+                <p class="mt-2 text-center text-sm leading-5 text-gray-600">
+                    Or
+                    <a href="/join"
+                        class="font-medium text-indigo-600 hover:text-indigo-500 focus:outline-none focus:underline transition ease-in-out duration-150">
+                        make a new account
+                    </a>
+                </p>
+            </div>
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 mt-5 rounded relative" style="display: none;" id='alert' role="alert">
+                <strong class="font-bold">Error logging in!</strong>
+                <span class="block sm:inline" id='msg'>Something seriously bad happened.</span>
+              </div>
+            <form class="mt-8" action="#" id='form'>
+                <input type="hidden" name="remember" value="true">
+                <div class="rounded-md shadow-sm">
+                    <div>
+                        <input aria-label="Username" id='username' name="username" type="text" required
+                            class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:shadow-outline-blue focus:border-blue-300 focus:z-10 sm:text-sm sm:leading-5"
+                            placeholder="Username">
+                    </div>
+                    <div class="-mt-px">
+                        <input aria-label="Password" id='password' name="password" type="password" required
+                            class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:shadow-outline-blue focus:border-blue-300 focus:z-10 sm:text-sm sm:leading-5"
+                            placeholder="Password">
+                    </div>
+                </div>
+<!-- 
+                <div class="mt-6 flex items-center justify-between">
+                    <div class="flex items-center">
+                        <input id="remember_me" type="checkbox"
+                            class="form-checkbox h-4 w-4 text-indigo-600 transition duration-150 ease-in-out">
+                        <label for="remember_me" class="ml-2 block text-sm leading-5 text-gray-900">
+                            Remember me
+                        </label>
+                    </div>
+
+                    <div class="text-sm leading-5">
+                        <a href="#"
+                            class="font-medium text-indigo-600 hover:text-indigo-500 focus:outline-none focus:underline transition ease-in-out duration-150">
+                            Forgot your password?
+                        </a>
+                    </div>
+                </div>
+ -->
+                <div class="mt-6">
+                    <button type="submit"
+                        class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm leading-5 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-500 focus:outline-none focus:border-indigo-700 focus:shadow-outline-indigo active:bg-indigo-700 transition duration-150 ease-in-out">
+                        Sign in
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
 </body>
 
 <%- include('../partials/scripts.ejs'); %>
@@ -27,7 +83,7 @@
         e.preventDefault()
         var username = document.getElementById('username').value
         var password = document.getElementById('password').value
-        login(username,password)
+        login(username, password)
     })
 
     async function login(username, password) {
@@ -42,7 +98,7 @@
         if (data.ok) {
             document.location.href = '/'
         } else {
-            document.getElementById('msg').style.display = 'block'
+            document.getElementById('alert').style.display = 'block'
             document.getElementById('msg').innerText = data.error
         }
     }
