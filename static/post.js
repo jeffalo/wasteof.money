@@ -1,4 +1,4 @@
-var postbutton = document.querySelector('.post-btn')
+var postbutton = document.querySelector('#post-button')
 if (postbutton) {
   postbutton.addEventListener('click', async (event) => {
     const { value: text } = await Swal.fire({

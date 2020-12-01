@@ -4,6 +4,8 @@ var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
 var bcrypt = require('bcrypt');
 const fs = require('fs')
+const jdenticon = require("jdenticon");
+
 
 const app = express()
 
@@ -131,7 +133,10 @@ app.post('/join', async function (req, res) {
         var password = req.body.password
 
         bcrypt.hash(password, saltRounds, async function (err, hashedPassword) {
-            users.insert({ name: username, password: hashedPassword })
+            if(err){
+                res.json({error: 'password hashing error'})
+            } else {
+                users.insert({ name: username, password: hashedPassword })
                 .then(user => {
                     console.log(user)
                     var token = makeID(20)
@@ -147,10 +152,8 @@ app.post('/join', async function (req, res) {
                         res.json({ error: 'uncaught database error: ' + err.code })
                     }
                 })
-
+            }
         });
-
-
     } else {
         res.redirect('/')
     }
@@ -171,10 +174,14 @@ app.get('/users/:user', async function (req, res, next) {
     var loggedInUser = findUser(userCookie)
 
     var user = await users.findOne({ name: req.params.user })
-    var userPosts = await posts.find({ poster: req.params.user })
-    userPosts.reverse()
+    var userPosts = await posts.find({ poster: req.params.user }, { sort: { time: -1, _id:-1 } }) //sort by time but fallback to id
+
+
+    var post = req.query.post
+    //console.log(post) // debug 
+
     if (user) {
-        ejs.renderFile(__dirname + '/pages/user.ejs', { user, loggedInUser, posts: userPosts }, (err, str) => {
+        ejs.renderFile(__dirname + '/pages/user.ejs', { user, loggedInUser, posts: userPosts, activePost: post }, (err, str) => {
             if (err) console.log(err)
             res.send(str)
         })
@@ -184,16 +191,18 @@ app.get('/users/:user', async function (req, res, next) {
 })
 
 app.get('/picture/:user', async function (req, res, next) {
-    if(fs.existsSync(`./uploads/profiles/${req.params.user}.png`)){
-        res.sendFile(__dirname+`/uploads/profiles/${req.params.user}.png`)
+    if (fs.existsSync(`./uploads/profiles/${req.params.user}.png`)) {
+        res.sendFile(__dirname + `/uploads/profiles/${req.params.user}.png`)
     } else {
-        res.sendFile(__dirname+'/static/default.jpg')
+        var file = jdenticon.toPng(req.params.user, 128)
+        res.set('Content-Type', 'image/png')
+        res.send(file)
     }
 })
 
 app.get('/posts/:post', async function (req, res) {
-    var post = await posts.findOne({ _id:req.params.post })
-    res.redirect(`/users/${post.poster}#post_${post._id}`)
+    var post = await posts.findOne({ _id: req.params.post })
+    res.redirect(`/users/${post.poster}?post=${post._id}`)
 })
 
 app.post('/post', async function (req, res) {
@@ -201,7 +210,7 @@ app.post('/post', async function (req, res) {
     var user = findUser(userCookie)
 
     if (user) {
-        posts.insert({ content: req.body.post, poster: user.username, time: Date.now() })
+        posts.insert({ content: req.body.post, poster: user.username, time: Date.now(), loves: [] })
             .then(post => {
                 res.json({ ok: 'made post', id: post._id })
             })
@@ -212,12 +221,58 @@ app.post('/post', async function (req, res) {
     }
 })
 
-app.use((req, res,next)=>{ //ALWAYS SHOULD BE LAST
+app.post('/posts/:id/love', async function (req, res) {
+    var userCookie = req.cookies.token
+    var user = findUser(userCookie)
+
+    if (user) {
+        try {
+            posts.findOne({ _id: req.params.id })
+                .then(post => {
+                    if (post) {
+                        var loves = post.loves || []
+                        if (!loves.includes(user.username)) {
+                            loves.push(user.username)
+                            posts.update({ _id: req.params.id }, { $set: { loves: loves } })
+                                .then(() => {
+                                    res.json({ ok: 'loved post', new: loves.length, action: 'love' })
+                                })
+                                .catch(updateerr => {
+                                    console.log(updateerr)
+                                    res.json({ error: updateerr })
+                                })
+                        } else {
+                            loves = loves.filter(i => i !== user.username)
+                            posts.update({ _id: req.params.id }, { $set: { loves: loves } })
+                                .then(() => {
+                                    res.json({ ok: 'unloved', new: loves.length, action: 'unlove' })
+                                })
+                                .catch(updateerr => {
+                                    console.log(updateerr)
+                                    res.json({ error: updateerr })
+                                })
+                        }
+                    } else {
+                        res.json({ eror: 'post not found' })
+                    }
+                })
+                .catch(err => {
+                    res.json({ error: err.code })
+                })
+        } catch {
+            res.json({ error: 'oops something went wrong' })
+        }
+    } else {
+        res.json({ error: 'needs to be logged in' })
+    }
+})
+
+app.use((req, res, next) => { //ALWAYS SHOULD BE LAST
     res.status(404).send(`
     <h1>not found</h1>
     404 - some text about page not being found
     `);
- });
+});
 
 function findUser(token) {
     var user = tokens.find(t => t.token == token)

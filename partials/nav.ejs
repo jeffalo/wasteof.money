@@ -1,18 +1,43 @@
-<nav class="topnav" id="myTopnav">
-    <a class="item <%= active=='home' ? 'active' : '' %>" href="/">Home</a>
-    <a class="item <%= active=='explore' ? 'active' : '' %>" href="/explore">Explore</a>
-    <%if (user) { %>
-        <a href="/users/<%= user.username %>" class="item <%= active=='user_'+user.username ? 'active' : '' %>"><%= user.username %> </a>
-        <a href="/settings" class="item settings"><span class="iconify" data-icon="uil:cog"></span></a>
-        <a href="/logout" class="item signout"><span class="iconify" data-icon="uil:exit"></span></a>
-    <% } else { %>
-        <a class="item <%= active=='join' ? 'active' : '' %> join" href="/join">Join</a>
-        <a class="item <%= active=='login' ? 'active' : '' %> sign-up" href="/login">Sign in</a>
-    <% } %>
-
-<!--     <a href="javascript:void(0);" class="icon right" onclick="menu()">
-        <span class="iconify" data-icon="uil:bars"></span>
-    </a> -->
+<nav class="bg-gray-800 p-2 mt-0 fixed w-full z-10 top-0">
+    <div class="container mx-auto flex flex-wrap items-center">
+        <div class="flex w-full md:w-1/2 justify-center md:justify-start text-white font-bold">
+            <a class="text-white no-underline hover:text-white hover:no-underline" href="/">
+                <span class="text-2xl pl-2"><img class='h-10 pr-2 inline-block' src='/bill.svg'>wasteof.money (beta)</span>
+            </a>
+        </div>
+        <div class="flex w-full content-center justify-between md:w-1/2 md:justify-end">
+            <ul class="list-reset flex justify-between flex-1 md:flex-none items-center">
+                <li class="mr-3">
+                    <a class="inline-block py-2 px-4 <%= active=='home' ? 'text-white no-underline' : 'text-gray-600 no-underline hover:text-gray-200 hover:text-underline' %>" href="/">Home</a>
+                </li>
+                <li class="mr-3">
+                    <a class="inline-block py-2 px-4 <%= active=='explore' ? 'text-white no-underline' : 'text-gray-600 no-underline hover:text-gray-200 hover:text-underline' %>" href="/explore">Explore</a>
+                </li>
+                <%if (user) { %>
+                <li class="mr-3">
+                    <a class="inline-block py-2 px-4 <%= active=='user_'+user.username ? 'text-white no-underline' : 'text-gray-600 no-underline hover:text-gray-200 hover:text-underline' %>"
+                        href="/users/<%= user.username %>"><%= user.username %></a>
+                </li>
+                <li class="mr-3">
+                    <a class="align-middle inline-block py-2 px-4 <%= active=='settings' ? 'text-white no-underline' : 'text-gray-600 no-underline hover:text-gray-200 hover:text-underline' %>"
+                        href="/settings"><span class="iconify" data-icon="uil:cog"></span></a>
+                </li>
+                <li class="mr-3">
+                    <a class="align-middle inline-block py-2 px-4 <%= active=='logout' ? 'text-white no-underline' : 'text-gray-600 no-underline hover:text-gray-200 hover:text-underline' %>"
+                        href="/logout"><span class="iconify" data-icon="uil:exit"></span></a>
+                </li>
+                <% } else { %>
+                <li class="mr-3">
+                    <a class="align-middle inline-block py-2 px-4 <%= active=='join' ? 'text-white no-underline' : 'text-gray-600 no-underline hover:text-gray-200 hover:text-underline' %>"
+                        href="/join">Join</a>
+                </li>
+                <li class="mr-3">
+                    <a class="align-middle inline-block py-2 px-4 <%= active=='login' ? 'text-white no-underline' : 'text-gray-600 no-underline hover:text-gray-200 hover:text-underline' %>"
+                        href="/login">Login</a>
+                </li>
+                <% } %>
+            </ul>
+        </div>
+    </div>
 </nav>
-
 <%- include('../partials/post.ejs', {user}); %>
