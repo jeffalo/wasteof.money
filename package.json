@@ -18,6 +18,7 @@
     "dotenv": "^8.2.0",
     "ejs": "^3.1.5",
     "express": "^4.17.1",
+    "jdenticon": "^3.0.1",
     "monk": "^7.3.2",
     "postcss": "^8.1.7",
     "postcss-cli": "^8.3.0"
