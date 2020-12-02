@@ -103,7 +103,7 @@ app.post('/login', async function (req, res) {
     if (!findUser(userCookie)) {
         var username = req.body.username.toLowerCase()
         var password = req.body.password
-        const user = await users.findOne({ name: { $regex: new RegExp(username, "i") } });
+        const user = await users.findOne({ name: { $regex: new RegExp("^" + username + "$", "i") } });
 
         if (user) {
             bcrypt.compare(password, user.password, function (err, result) {
@@ -133,25 +133,29 @@ app.post('/join', async function (req, res) {
         var password = req.body.password
 
         bcrypt.hash(password, saltRounds, async function (err, hashedPassword) {
-            if(err){
-                res.json({error: 'password hashing error'})
+            if (err) {
+                res.json({ error: 'password hashing error' })
             } else {
-                users.insert({ name: username, password: hashedPassword })
-                .then(user => {
-                    console.log(user)
-                    var token = makeID(20)
-                    tokens.push({ username: user.name, token: token })
-                    res.cookie('token', token)
-                    res.json({ ok: 'made account successfully' })
-                })
-                .catch(err => {
-                    console.log(err)
-                    if (err.code == 11000) {
-                        res.json({ error: 'username already taken' })
-                    } else {
-                        res.json({ error: 'uncaught database error: ' + err.code })
-                    }
-                })
+                if (/^[a-z0-9_\-.]{1,20}$/.test(username)) {//check if username matches criteria
+                    users.insert({ name: username, password: hashedPassword })
+                        .then(user => {
+                            console.log(user)
+                            var token = makeID(20)
+                            tokens.push({ username: user.name, token: token })
+                            res.cookie('token', token)
+                            res.json({ ok: 'made account successfully' })
+                        })
+                        .catch(err => {
+                            if (err.code == 11000) {
+                                res.json({ error: 'username already taken' })
+                            } else {
+                                console.log(err)
+                                res.json({ error: 'uncaught database error: ' + err.code })
+                            }
+                        })
+                } else {//username does not match criterai
+                    res.json({ error: 'must match regex /^[a-z0-9_\-.]{1,20}$/' })
+                }
             }
         });
     } else {
@@ -174,7 +178,7 @@ app.get('/users/:user', async function (req, res, next) {
     var loggedInUser = findUser(userCookie)
 
     var user = await users.findOne({ name: req.params.user })
-    var userPosts = await posts.find({ poster: req.params.user }, { sort: { time: -1, _id:-1 } }) //sort by time but fallback to id
+    var userPosts = await posts.find({ poster: req.params.user }, { sort: { time: -1, _id: -1 } }) //sort by time but fallback to id
 
 
     var post = req.query.post
@@ -259,11 +263,48 @@ app.post('/posts/:id/love', async function (req, res) {
                 .catch(err => {
                     res.json({ error: err.code })
                 })
-        } catch {
+        } catch (error) {
+            console.log(error)
             res.json({ error: 'oops something went wrong' })
         }
     } else {
         res.json({ error: 'needs to be logged in' })
+    }
+})
+
+app.post('/users/:name/follow', async function (req, res) {
+    var userCookie = req.cookies.token
+    var tokenUser = findUser(userCookie)
+    if (tokenUser) {
+        var user = await users.findOne({ name: tokenUser.username })
+        if (user) {
+            var followUser = await users.findOne({ name: req.params.name })
+            var followers = followUser.followers || []
+            if (followers.includes(user.name)) { //already follower, unfollow
+                followers = followers.filter(i => i !== user.name)
+                try {
+                    await users.update({ name: followUser.name }, { $set: { followers } })
+                    res.json({ ok: 'unfollowing', action: 'unfollow', new: followers.length })
+                }
+                catch (error) {
+                    console.log(error)
+                    res.json({ error: 'database error' })
+                }
+            } else { //follow
+                try {
+                    await users.update({ name: followUser.name }, { $push: { followers: user.name } })
+                    res.json({ ok: 'now following', action: 'follow', new: followers.length + 1 })
+                }
+                catch (error) {
+                    console.log(error)
+                    res.json({ error: 'database error' })
+                }
+            }
+        } else {
+            res.json({ error: 'no user found in database' })
+        }
+    } else {
+        res.json({ error: 'no user found with token' })
     }
 })
 

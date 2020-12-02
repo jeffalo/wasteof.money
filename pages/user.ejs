@@ -9,6 +9,13 @@
     <main class='container mx-auto px-4 mt-24 md:mt-16'>
         <img src="/picture/<%= user.name %>" height="30px" class='rounded-full h-10 inline-block shadow'>
         <h1 class="inline-block font-bold">@<%= user.name %></h1>
+        <% if(loggedInUser) { %>
+            <button data-user='<%= user.name %>' id='follow' class="group relative inline-block py-2 px-4 border border-transparent text-sm leading-5 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-500 focus:outline-none focus:border-indigo-700 focus:shadow-outline-indigo active:bg-indigo-700 transition duration-150 ease-in-out">
+                <span class="iconify inline-block mr-1" data-icon="uil:user-plus" data-inline="true"></span>
+                <span class='inline-block' id='follower-count'><%= user.followers ? user.followers.length.toString() : '0' %></span>
+            </button>
+            <span class='italic text-gray-600' id='follow-status'><%= user.followers ? user.followers.includes(loggedInUser.username) ? 'following' : 'not following' : 'not following' %></span>
+        <% } %>
         <p class="text-gray-700 italic">id: <%= user._id %></p>
         <% posts.forEach(post => { %>
         <div
@@ -52,7 +59,7 @@
     console.log('user script loaded')
     var loves = document.querySelectorAll('.love')
     var favs = document.querySelectorAll('.fav')
-
+    var followButton = document.querySelector('#follow')
     loves.forEach(btn => {
         var id = btn.children[0].dataset.postId
 
@@ -65,10 +72,16 @@
                 if(action == 'unlove') {
                     btn.classList.remove('text-red-600')
                 }
-                document.querySelector(`[data-post-count-id='${id}']`).innerText = newCount
+                document.querySelector(`[data-post-count-id='${id}']`).innerText = newCount.toString()
             })
         })
     })
+
+    if(followButton){
+        followButton.addEventListener('click', e=>{
+            follow(followButton.dataset.user)
+        })
+    }
 
 /*     favs.forEach(btn => {
         var id = btn.dataset.postId
@@ -83,6 +96,23 @@
             }
         })
     }) */
+
+    async function follow(user) {
+        console.log(`gonna follow ${user}`)
+        var followres = await fetch(`/users/${user}/follow`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        var followjson = await followres.json()   
+        console.log(followjson)
+        if(followjson.ok){
+            document.getElementById('follower-count').innerText = followjson.new.toString() || 'error'
+            if(followjson.action == 'follow') document.getElementById('follow-status').innerText = 'following'
+            if(followjson.action == 'unfollow') document.getElementById('follow-status').innerHTML = 'not following'
+        } 
+    }
 
     async function love(id, callback) {
         console.log(`loving ${id}`)
