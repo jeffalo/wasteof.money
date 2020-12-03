@@ -23,12 +23,17 @@ Next, install it and its dependancies
 ```sh 
 npm i
 ```
+Next, build the css
+```sh
+tailwind:css
+```
+
 #### .env
 Set up your .env
 - Mongodb needs DB_URL env variable (For example, DB_URL=localhost/social)
 - (Optional) LISTEN_PORT env variable default 8080
 
-Lastly, start the app!
+Finally, start the app!
 
 ```sh 
 node .
