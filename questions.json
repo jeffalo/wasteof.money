@@ -1,0 +1,37 @@
+[
+    {
+        "id": "math-0",
+        "name": "What is 1+24?",
+        "answer": "25"
+    },
+    {
+        "id": "math-1",
+        "name": "What is 1 + 1 x 2?",
+        "answer": "4"
+    },
+    {
+        "id": "math-2",
+        "name": "What is 89-23?",
+        "answer": "66"
+    },
+    {
+        "id": "math-3",
+        "name": "What is 10x10?",
+        "answer": "100"
+    },
+    {
+        "id": "math-4",
+        "name": "What is -12+45",
+        "answer": "33"
+    },
+    {
+        "id": "math-5",
+        "name": "What is the first number of the arabic numeral system?",
+        "answer": "0"
+    },
+    {
+        "id": "meta-0",
+        "name": "What is name of this site?",
+        "answer": "wasteof.money"
+    }
+]

@@ -6,7 +6,9 @@ var bcrypt = require('bcrypt');
 const fs = require('fs')
 const jdenticon = require("jdenticon");
 
+const questions = require('./questions.json')
 
+const port = process.env.LISTEN_PORT || 8080
 const app = express()
 
 require('dotenv').config()
@@ -70,8 +72,11 @@ app.get('/join', function (req, res) {
     var userCookie = req.cookies.token
     var user = findUser(userCookie)
 
+    var random = Math.floor(Math.random() * questions.length);
+    var captcha = questions[random]
+
     if (!user) {
-        ejs.renderFile(__dirname + '/pages/join.ejs', { user }, (err, str) => {
+        ejs.renderFile(__dirname + '/pages/join.ejs', { user, question: captcha }, (err, str) => {
             if (err) console.log(err)
             res.send(str)
         })
@@ -92,7 +97,7 @@ app.get('/logout', function (req, res) {
         res.cookie('token', '')
         res.redirect('/')
     } else {
-        res.send('not logged in, how did you get here what is this socery')
+        res.redirect('/')
     }
 
 })
@@ -103,7 +108,7 @@ app.post('/login', async function (req, res) {
     if (!findUser(userCookie)) {
         var username = req.body.username.toLowerCase()
         var password = req.body.password
-        const user = await users.findOne({ name: { $regex: new RegExp("^" + username + "$", "i") } });
+        const user = await findUserData(username)
 
         if (user) {
             bcrypt.compare(password, user.password, function (err, result) {
@@ -131,35 +136,62 @@ app.post('/join', async function (req, res) {
     if (!findUser(userCookie)) {
         var username = req.body.username.toLowerCase()
         var password = req.body.password
+        var captcha = req.body.captcha
+        var captchaQuestion = questions.find(i=>i.id==captcha.id)
 
-        bcrypt.hash(password, saltRounds, async function (err, hashedPassword) {
-            if (err) {
-                res.json({ error: 'password hashing error' })
-            } else {
-                if (/^[a-z0-9_\-.]{1,20}$/.test(username)) {//check if username matches criteria
-                    users.insert({ name: username, password: hashedPassword })
-                        .then(user => {
-                            console.log(user)
-                            var token = makeID(20)
-                            tokens.push({ username: user.name, token: token })
-                            res.cookie('token', token)
-                            res.json({ ok: 'made account successfully' })
-                        })
-                        .catch(err => {
-                            if (err.code == 11000) {
-                                res.json({ error: 'username already taken' })
-                            } else {
-                                console.log(err)
-                                res.json({ error: 'uncaught database error: ' + err.code })
-                            }
-                        })
-                } else {//username does not match criterai
-                    res.json({ error: 'must match regex /^[a-z0-9_\-.]{1,20}$/' })
+        if(captchaQuestion.answer == captcha.answer){
+            bcrypt.hash(password, saltRounds, async function (err, hashedPassword) {
+                if (err) {
+                    res.json({ error: 'password hashing error' })
+                } else {
+                    if (/^[a-z0-9_\-.]{1,20}$/.test(username)) {//check if username matches criteria
+                        users.insert({ name: username, password: hashedPassword })
+                            .then(user => {
+                                console.log(user)
+                                var token = makeID(20)
+                                tokens.push({ username: user.name, token: token })
+                                res.cookie('token', token)
+                                res.json({ ok: 'made account successfully' })
+                            })
+                            .catch(err => {
+                                if (err.code == 11000) {
+                                    res.json({ error: 'username already taken' })
+                                } else {
+                                    console.log(err)
+                                    res.json({ error: 'uncaught database error: ' + err.code })
+                                }
+                            })
+                    } else {//username does not match criterai
+                        res.json({ error: 'must match regex /^[a-z0-9_\-.]{1,20}$/' })
+                    }
                 }
-            }
-        });
+            });
+        } else {
+            res.json({ error: 'failed captcha' })
+        }
     } else {
         res.redirect('/')
+    }
+})
+
+app.get('/explore', async function (req, res) {
+    var userCookie = req.cookies.token
+    var tokenUser = findUser(userCookie)
+    if (tokenUser) {
+        var user = await findUserData(tokenUser.username)
+        if (user) {
+            //logged in explore page, show trending posts, and posts by who users following
+            ejs.renderFile(__dirname + '/pages/explore.ejs', { user:tokenUser }, (err, str) => {
+                if (err) console.log(err)
+                res.send(str)
+            })
+        }
+    } else {
+        //logged out explore page, show trending posts etc
+        ejs.renderFile(__dirname + '/pages/explore.ejs', { user:tokenUser }, (err, str) => {
+            if (err) console.log(err)
+            res.send(str)
+        })
     }
 })
 
@@ -177,7 +209,7 @@ app.get('/users/:user', async function (req, res, next) {
     var userCookie = req.cookies.token
     var loggedInUser = findUser(userCookie)
 
-    var user = await users.findOne({ name: req.params.user })
+    var user = await findUserData(req.params.user)
     var userPosts = await posts.find({ poster: req.params.user }, { sort: { time: -1, _id: -1 } }) //sort by time but fallback to id
 
 
@@ -204,9 +236,13 @@ app.get('/picture/:user', async function (req, res, next) {
     }
 })
 
-app.get('/posts/:post', async function (req, res) {
-    var post = await posts.findOne({ _id: req.params.post })
-    res.redirect(`/users/${post.poster}?post=${post._id}`)
+app.get('/posts/:post', async function (req, res, next) {
+    try {
+        var post = await posts.findOne({ _id: req.params.post })
+        res.redirect(`/users/${post.poster}?post=${post._id}`)
+    } catch {
+        next()
+    }
 })
 
 app.post('/post', async function (req, res) {
@@ -276,9 +312,9 @@ app.post('/users/:name/follow', async function (req, res) {
     var userCookie = req.cookies.token
     var tokenUser = findUser(userCookie)
     if (tokenUser) {
-        var user = await users.findOne({ name: tokenUser.username })
+        var user = await findUserData(tokenUser.username)
         if (user) {
-            var followUser = await users.findOne({ name: req.params.name })
+            var followUser = await findUserData(req.params.name)
             var followers = followUser.followers || []
             if (followers.includes(user.name)) { //already follower, unfollow
                 followers = followers.filter(i => i !== user.name)
@@ -320,6 +356,18 @@ function findUser(token) {
     return user
 }
 
+function findUserData(name) {
+    var regexName = "^" + name + "$"
+    return new Promise(async (resolve, reject) => {
+        try {
+            var user = await users.findOne({ name: { $regex: new RegExp(regexName, "i") } });
+            resolve(user)
+        } catch (error) {
+            reject(Error(error))
+        }
+    })
+}
+
 function makeID(length) {
     var result = '';
     var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -330,4 +378,6 @@ function makeID(length) {
     return result;
 }
 
-app.listen(8080);
+app.listen(port, () => {
+    console.log(`listening on http://localhost:${port}`)
+});
