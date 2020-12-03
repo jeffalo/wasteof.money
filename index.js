@@ -364,14 +364,6 @@ app.use((req, res, next) => {
     }
 })
 
-app.use((req, res, next) => { //ALWAYS SHOULD BE LAST
-    var userCookie = req.cookies.token
-    var tokenUser = findUser(userCookie)
-    res.status(404).send(    ejs.renderFile(__dirname + '/pages/404.ejs', { user:tokenUser }, (err, str) => {
-        if (err) console.log(err)
-        res.send(str)
-    }));
-});
 
 function findUser(token) {
     var user = tokens.find(t => t.token == token)
