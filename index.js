@@ -343,12 +343,34 @@ app.post('/users/:name/follow', async function (req, res) {
         res.json({ error: 'no user found with token' })
     }
 })
+app.use((req, res, next) => {
+    var userCookie = req.cookies.token
+    var tokenUser = findUser(userCookie)
+    if (tokenUser) {
+        var user =  findUserData(tokenUser.username)
+        if (user) {
+            //logged in explore page, show trending posts, and posts by who users following
+            res.status(404).send( ejs.renderFile(__dirname + '/pages/404.ejs', { user:tokenUser }, (err, str) => {
+                if (err) console.log(err)
+                res.send(str)
+            }))
+        }
+    } else {
+        //logged out explore page, show trending posts etc
+        res.status(404).send(ejs.renderFile(__dirname + '/pages/404.ejs', { user:tokenUser }, (err, str) => {
+            if (err) console.log(err)
+            res.send(str)
+        }))
+    }
+})
 
 app.use((req, res, next) => { //ALWAYS SHOULD BE LAST
-    res.status(404).send(`
-    <h1>not found</h1>
-    404 - some text about page not being found
-    `);
+    var userCookie = req.cookies.token
+    var tokenUser = findUser(userCookie)
+    res.status(404).send(    ejs.renderFile(__dirname + '/pages/404.ejs', { user:tokenUser }, (err, str) => {
+        if (err) console.log(err)
+        res.send(str)
+    }));
 });
 
 function findUser(token) {
