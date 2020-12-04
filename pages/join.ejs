@@ -44,14 +44,6 @@
                             placeholder="Password">
                     </div>
                 </div>
-                <div class="rounded-md shadow-sm mt-2">
-                    <div class="-mt-px">
-                        <label for="captcha"><%= question.name %> </label>
-                        <input data-id="<%= question.id %>" aria-label="captcha" id='captcha' name="captcha" type="text" required
-                        class="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:shadow-outline-blue focus:border-blue-300 focus:z-10 sm:text-sm sm:leading-5"
-                        placeholder="captcha">
-                    </div>
-                </div>
 <!-- 
                 <div class="mt-6 flex items-center justify-between">
                     <div class="flex items-center">
@@ -90,20 +82,17 @@
         e.preventDefault()
         var username = document.getElementById('username').value
         var password = document.getElementById('password').value
-        var captcha = {
-            id: document.getElementById('captcha').dataset.id,
-            answer: document.getElementById('captcha').value
-        }
-        signup(username, password, captcha)
+
+        signup(username, password)
     })
 
-    async function signup(username, password, captcha) {
+    async function signup(username, password) {
         var res = await fetch('/join', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ username, password, captcha })
+            body: JSON.stringify({ username, password })
         })
         var data = await res.json()
         if (data.ok) {
