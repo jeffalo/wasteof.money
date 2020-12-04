@@ -346,22 +346,10 @@ app.post('/users/:name/follow', async function (req, res) {
 app.use((req, res, next) => { // Always last
     var userCookie = req.cookies.token
     var tokenUser = findUser(userCookie)
-    if (tokenUser) {
-        var user =  findUserData(tokenUser.username)
-        if (user) {
-            //logged in 404 page
-            res.status(404).send( ejs.renderFile(__dirname + '/pages/404.ejs', { user:tokenUser }, (err, str) => {
-                if (err) console.log(err)
-                res.send(str)
-            }))
-        }
-    } else {
-        //logged out 404 page
-        res.status(404).send(ejs.renderFile(__dirname + '/pages/404.ejs', { user:tokenUser }, (err, str) => {
-            if (err) console.log(err)
-            res.send(str)
-        }))
-    }
+    res.status(404).send( ejs.renderFile(__dirname + '/pages/404.ejs', { user:tokenUser }, (err, str) => {
+        if (err) console.log(err)
+        res.send(str)
+    }))
 })
 
 
