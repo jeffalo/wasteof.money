@@ -2,7 +2,7 @@
 wasteof.money is a social media with aspects inspired from Twitter and Scratch. 
 | Pictures             |  
 :-------------------------:|
-![](https://user-images.githubusercontent.com/40470736/101082495-d427f400-35ab-11eb-9972-3e60e025050f.png)  
+![](https://user-images.githubusercontent.com/64214252/101201862-5e1c9f00-3636-11eb-8872-fed504864817.png)  
 ![](https://user-images.githubusercontent.com/40470736/101082518-ddb15c00-35ab-11eb-933b-babb15b19cd3.png) 
 ![](https://user-images.githubusercontent.com/40470736/101082530-e2761000-35ab-11eb-9728-373d29ab7579.png)  
 ## How to install to help contribute
