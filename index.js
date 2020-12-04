@@ -343,13 +343,15 @@ app.post('/users/:name/follow', async function (req, res) {
         res.json({ error: 'no user found with token' })
     }
 })
+app.use((req, res, next) => { // Always last
+    var userCookie = req.cookies.token
+    var tokenUser = findUser(userCookie)
+    res.status(404).send( ejs.renderFile(__dirname + '/pages/404.ejs', { user:tokenUser }, (err, str) => {
+        if (err) console.log(err)
+        res.send(str)
+    }))
+})
 
-app.use((req, res, next) => { //ALWAYS SHOULD BE LAST
-    res.status(404).send(`
-    <h1>not found</h1>
-    404 - some text about page not being found
-    `);
-});
 
 function findUser(token) {
     var user = tokens.find(t => t.token == token)
