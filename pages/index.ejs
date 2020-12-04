@@ -6,11 +6,80 @@
 <body class='bg-gray-100'>
     <%- include('../partials/nav.ejs', {active: "home", user}); %>
 
-    <main class='container mx-auto px-4 mt-24 md:mt-16'>
-        <h1 class="font-bold text-2xl">next generation social media</h1>
-        <p>wasteof.money, is a very special product. it can only be described as the next generation social media.</p>
-        <p>returning user? your feed is on the <a class='text-indigo-600' href="/explore">explore page</a></p>
-    </main>
+        <%if (!user) { %> 
+            <!-- This example requires Tailwind CSS v2.0+ -->
+
+  
+        <!--
+          Mobile menu, show/hide based on menu open state.
+  
+          Entering: "duration-150 ease-out"
+            From: "opacity-0 scale-95"
+            To: "opacity-100 scale-100"
+          Leaving: "duration-100 ease-in"
+            From: "opacity-100 scale-100"
+            To: "opacity-0 scale-95"
+        -->
+
+  
+        <main class="mt-10 mx-auto max-w-7xl px-4 sm:mt-12 sm:px-6 md:mt-16 lg:mt-20 lg:px-8 xl:mt-28 mb-10">
+          <div class="sm:text-center lg:text-left">
+            <h1 class="text-4xl tracking-tight font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
+              <span class="block xl:inline">The next generation</span>
+              <span class="block text-indigo-600 xl:inline">social media</span>
+            </h1>
+            <p class="mt-3 text-base text-gray-500 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
+                wasteof.money, is a very special product. It can only be described as the next generation social media.
+            </p>
+            <div class="mt-5 sm:mt-8 sm:flex sm:justify-center lg:justify-start">
+              <div class="rounded-md shadow">
+                <a href="/join" class="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 md:py-4 md:text-lg md:px-10">
+                  Get started
+                </a>
+              </div>
+              <div class="mt-3 sm:mt-0 sm:ml-3">
+                <a href="/login" class="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 md:py-4 md:text-lg md:px-10">
+                  Returning user? Log in
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div class="max-w-2xl flex p-6 mx-auto my-5  rounded-lg shadow-md bg-white">
+            <div class="pt-1">
+                <img src="/picture/jane_doe" height="30px" class="rounded-full h-6 inline-block shadow">
+                <h4 class="inline-block text-xl text-gray-900 leading-tight align-middle">@jane_doe</h4>
+                <p class="text-base text-gray-600 leading-normal">Hello world!</p>
+                <p class="text-base text-gray-500 italic leading-normal">
+                    12/3/2020 4:46:34 PM
+                    - 5fc95c7ec8051b0141f956b1</p>
+                
+            </div>
+        </div>
+            <div class="max-w-2xl flex p-6 mx-auto my-5  rounded-lg shadow-md bg-white">
+                <div class="pt-1">
+                    <img src="/picture/jane_doe" height="30px" class="rounded-full h-6 inline-block shadow">
+                    <h4 class="inline-block text-xl text-gray-900 leading-tight align-middle">@jane_doe</h4>
+                    <p class="text-base text-gray-600 leading-normal">Wasteof.money is pretty sweet! Try it out!</p>
+                    <p class="text-base text-gray-500 italic leading-normal">
+                        12/3/2020 4:45:30 PM
+                        - t66ewjhszhjt7328o77366</p>
+                    
+                </div>
+            </div>
+        
+        </main>
+      </div>
+    </div>
+    <div class="lg:absolute lg:inset-y-0 lg:right-0 lg:w-1/2">
+    </div>
+  </div>
+  
+        <% } %>
+        <%if (user) { %> 
+            <h1 class="font-bold text-2xl">Hi, <%= user.username  %></h1>
+            <p>Your feed is on the <a class='text-indigo-600' href="/explore">explore page</a></p><% } %>
+
 </body>
 
 <%- include('../partials/scripts.ejs'); %>
