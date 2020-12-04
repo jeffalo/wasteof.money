@@ -5,6 +5,7 @@
 
 <body class='bg-gray-100'>
     <%- include('../partials/nav.ejs', {active: "home", user}); %>
+    <main class="mt-10 mx-auto max-w-7xl px-4 sm:mt-12 sm:px-6 md:mt-16 lg:mt-20 lg:px-8 xl:mt-28 mb-15 ">
 
         <%if (!user) { %> 
             <!-- This example requires Tailwind CSS v2.0+ -->
@@ -22,7 +23,6 @@
         -->
 
   
-        <main class="mt-10 mx-auto max-w-7xl px-4 sm:mt-12 sm:px-6 md:mt-16 lg:mt-20 lg:px-8 xl:mt-28 mb-10">
           <div class="sm:text-center lg:text-left">
             <h1 class="text-4xl tracking-tight font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
               <span class="block xl:inline">The next generation</span>
@@ -68,7 +68,6 @@
                 </div>
             </div>
         
-        </main>
       </div>
     </div>
     <div class="lg:absolute lg:inset-y-0 lg:right-0 lg:w-1/2">
@@ -78,7 +77,9 @@
         <% } %>
         <%if (user) { %> 
             <h1 class="font-bold text-2xl">Hi, <%= user.username  %></h1>
-            <p>Your feed is on the <a class='text-indigo-600' href="/explore">explore page</a></p><% } %>
+            <p>Your feed is on the <a class='text-indigo-600' href="/explore">explore page</a></p>
+            <% } %>
+        </main>
 
 </body>
 
