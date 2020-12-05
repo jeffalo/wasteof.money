@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+  <%- include('../partials/head.ejs', {page: "Settings"}); %>
+
+  <body class="bg-gray-100">
+    <%- include('../partials/nav.ejs', {active: "Settings", user, loggedIn}); %>
+
+    <main class="container mx-auto px-4 mt-24 md:mt-16">
+      <div
+        class="relative z-5 rounded-tr-xl sm:rounded-t-xl lg:rounded-xl shadow-lg flex flex-col sm:flex-row lg:flex-col xl:flex-row lg:-mr-8 ConstraintBased_container__3fbpK"
+      >
+       <a href="#account"> <h3
+          class="flex-none w-full sm:w-48 lg:w-full xl:w-48 bg-purple-50 rounded-tr-xl sm:rounded-tr-none sm:rounded-tl-xl lg:rounded-t-xl xl:rounded-tr-none xl:rounded-l-xl text-lg leading-6 font-semibold text-purple-800 px-4 py-3 sm:p-8 lg:px-6 lg:py-4 xl:p-8"
+        >
+          <span style="opacity: 1">Account</span>
+        </h3></a>
+        <div
+          class="relative flex-auto bg-white sm:rounded-tr-xl lg:rounded-b-xl lg:rounded-tr-none xl:rounded-bl-none xl:rounded-r-xl"
+        >
+          <ul
+            class=" h-screen w-full leading-5 text-gray-600 space-y-4 px-4 py-6 sm:p-8 lg:p-6 xl:p-8"
+          >
+<section class="" id="account">
+    <h1 class="font-bold text-2xl mb-10">Account</h1>
+    <div>
+        <label for="price" class="block text-sm font-medium text-gray-700">Username</label>
+        <div class="mt-1 relative rounded-md shadow-sm">
+          <input type="text" name="price" id="price" class="border-gray-700 focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-7 pr-12 sm:text-sm border-gray-300 rounded-md" placeholder="jeffalo">
+        </div>
+      </div>
+      </section>
+        </ul>
+          <div
+            class="absolute z-10 bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white pointer-events-none"
+          ></div>
+        </div>
+      </div>
+    </main>
+  </body>
+
+  <%- include('../partials/scripts.ejs'); %>
+</html>
