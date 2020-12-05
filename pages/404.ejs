@@ -4,11 +4,11 @@
 <%- include('../partials/head.ejs', {page: "404"}); %>
 
 <body class='bg-gray-100'>
-    <%- include('../partials/nav.ejs', {active: "404", user}); %>
+    <%- include('../partials/nav.ejs', {active: "404", user, loggedIn}); %>
 
     <main class='container mx-auto px-4 mt-24 md:mt-16'>
         <h1 class="font-bold text-2xl">404</h1>
-        <p>This page could not be found</p>
+        <p>This page could not be found.</p>
     </main>
 </body>
 

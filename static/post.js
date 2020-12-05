@@ -33,4 +33,12 @@ async function post(text) {
   if(postjson.ok){
     document.location.href = `/posts/${postjson.id}`
   }
+  if(postjson.error){
+    Swal.fire({
+      icon: 'error',
+      title: 'Failed to post',
+      text: postjson.error,
+      footer: '<a href="https://github.com/jeffalo/wasteof.money/issues">Report issues</a>'
+    })  
+  }
 }

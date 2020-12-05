@@ -5,7 +5,7 @@
 
 
 <body class='bg-gray-100'>
-    <%- include('../partials/nav.ejs', {active: "user_"+user.name, user:loggedInUser}); %>
+    <%- include('../partials/nav.ejs', {active: "user_"+user.name, user:loggedInUser, loggedIn}); %>
     <main class='container mx-auto px-4 mt-24 md:mt-16'>
         <img src="/picture/<%= user.name %>" height="30px" class='rounded-full h-10 inline-block shadow'>
         <h1 class="inline-block font-bold">@<%= user.name %></h1>
@@ -14,7 +14,7 @@
                 <span class="iconify inline-block mr-1" data-icon="uil:user-plus" data-inline="true"></span>
                 <span class='inline-block' id='follower-count'><%= user.followers ? user.followers.length.toString() : '0' %></span>
             </button>
-            <span class='italic text-gray-600' id='follow-status'><%= user.followers ? user.followers.includes(loggedInUser.username) ? 'following' : 'not following' : 'not following' %></span>
+            <span class='italic text-gray-600' id='follow-status'><%= user.followers ? user.followers.includes(loggedInUser.name) ? 'following' : 'not following' : 'not following' %></span>
         <% } %>
         <p class="text-gray-700 italic">id: <%= user._id %></p>
         <% posts.forEach(post => { %>
@@ -29,7 +29,7 @@
                     - <%= post._id %></p>
                 <% if(loggedInUser) { %>
                 <div>
-                    <span class='love <%= post.loves && post.loves.includes(loggedInUser.username) ? 'text-red-600' : '' %>'>
+                    <span class='love <%= post.loves && post.loves.includes(loggedInUser.name) ? 'text-red-600' : '' %>'>
                         <span data-post-id='<%= post._id %>'
                             class="iconify inline-block hover:text-red-400 transition-color duration-200 cursor-pointer"
                             data-icon="uil:heart" data-inline="true"></span>
@@ -111,7 +111,15 @@
             document.getElementById('follower-count').innerText = followjson.new.toString() || 'error'
             if(followjson.action == 'follow') document.getElementById('follow-status').innerText = 'following'
             if(followjson.action == 'unfollow') document.getElementById('follow-status').innerHTML = 'not following'
-        } 
+        }
+        if(followjson.error){
+            Swal.fire({
+                icon: 'error',
+                title: 'Failed to follow',
+                text: followjson.error,
+                footer: '<a href="https://github.com/jeffalo/wasteof.money/issues">Report issues</a>'
+            })  
+        }
     }
 
     async function love(id, callback) {
@@ -129,6 +137,14 @@
             var newCount = lovejson.new
             if(action == 'love') callback(newCount, 'love')
             if(action == 'unlove') callback(newCount, 'unlove')
+        }
+        if(lovejson.error){
+            Swal.fire({
+                icon: 'error',
+                title: 'Failed to love',
+                text: lovejson.error,
+                footer: '<a href="https://github.com/jeffalo/wasteof.money/issues">Report issues</a>'
+            })  
         }
     }
 </script>

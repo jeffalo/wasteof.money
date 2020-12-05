@@ -13,10 +13,15 @@
                 <li class="mr-3">
                     <a class="inline-block py-2 px-4 <%= active=='explore' ? 'text-white no-underline' : 'text-gray-600 no-underline hover:text-gray-200 hover:text-underline' %>" href="/explore">Explore</a>
                 </li>
-                <%if (user) { %>
+                <%if (loggedIn) { %>
                 <li class="mr-3">
-                    <a class="inline-block py-2 px-4 <%= active=='user_'+user.username ? 'text-white no-underline' : 'text-gray-600 no-underline hover:text-gray-200 hover:text-underline' %>"
-                        href="/users/<%= user.username %>"><%= user.username %></a>
+                    <a class="inline-block py-2 px-4 <%= active=='user_'+user.name ? 'text-white no-underline' : 'text-gray-600 no-underline hover:text-gray-200 hover:text-underline' %>"
+                        href="/users/<%= user.name %>"><%= user.name %></a>
+                </li>
+                <li class="mr-3 relative">
+                    <a class="align-middle inline-block py-2 px-4 <%= active=='messages' ? 'text-white no-underline' : 'text-gray-600 no-underline hover:text-gray-200 hover:text-underline' %>"
+                        href="/messages"><span class="iconify" data-icon="uil:bell"></span></a>
+                    <div style='top: 2px; right: 5px;' class='absolute flex bg-red-600 text-white text-xs content-center justify-center items-center w-4 h-4 rounded-md'>5</div>
                 </li>
                 <li class="mr-3">
                     <a class="align-middle inline-block py-2 px-4 <%= active=='settings' ? 'text-white no-underline' : 'text-gray-600 no-underline hover:text-gray-200 hover:text-underline' %>"
