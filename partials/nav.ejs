@@ -21,7 +21,9 @@
                 <li class="mr-3 relative">
                     <a class="align-middle inline-block py-2 px-4 <%= active=='messages' ? 'text-white no-underline' : 'text-gray-600 no-underline hover:text-gray-200 hover:text-underline' %>"
                         href="/messages"><span class="iconify" data-icon="uil:bell"></span></a>
-                    <div style='top: 2px; right: 5px;' class='absolute flex bg-red-600 text-white text-xs content-center justify-center items-center w-4 h-4 rounded-md'>5</div>
+                    <% if (user.messages.unread.length > 0) { %>
+                    <div style='top: 2px; right: 5px;' class='absolute flex bg-red-600 text-white text-xs content-center justify-center items-center w-4 h-4 rounded-md'><%= user.messages.unread.length %></div>
+                    <% } %>
                 </li>
                 <li class="mr-3">
                     <a class="align-middle inline-block py-2 px-4 <%= active=='settings' ? 'text-white no-underline' : 'text-gray-600 no-underline hover:text-gray-200 hover:text-underline' %>"
