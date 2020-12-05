@@ -10,11 +10,10 @@
         <img src="/picture/<%= user.name %>" height="30px" class='rounded-full h-10 inline-block shadow'>
         <h1 class="inline-block font-bold">@<%= user.name %></h1>
         <% if(loggedInUser) { %>
-            <button data-user='<%= user.name %>' id='follow' class="group relative inline-block py-2 px-4 border border-transparent text-sm leading-5 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-500 focus:outline-none focus:border-indigo-700 focus:shadow-outline-indigo active:bg-indigo-700 transition duration-150 ease-in-out">
+            <button data-user='<%= user.name %>' id='follow' class="group relative inline-block py-2 px-4 border border-transparent text-sm leading-5 font-medium rounded-md text-white <%= user.followers.includes(loggedInUser.name)? 'bg-gray-600 hover:bg-gray-500' : 'bg-indigo-600 hover:bg-indigo-500' %> transition duration-150 ease-in-out">
                 <span class="iconify inline-block mr-1" data-icon="uil:user-plus" data-inline="true"></span>
                 <span class='inline-block' id='follower-count'><%= user.followers ? user.followers.length.toString() : '0' %></span>
             </button>
-            <span class='italic text-gray-600' id='follow-status'><%= user.followers ? user.followers.includes(loggedInUser.name) ? 'following' : 'not following' : 'not following' %></span>
         <% } %>
         <p class="text-gray-700 italic">id: <%= user._id %></p>
         <% posts.forEach(post => { %>
@@ -109,8 +108,14 @@
         console.log(followjson)
         if(followjson.ok){
             document.getElementById('follower-count').innerText = followjson.new.toString() || 'error'
-            if(followjson.action == 'follow') document.getElementById('follow-status').innerText = 'following'
-            if(followjson.action == 'unfollow') document.getElementById('follow-status').innerHTML = 'not following'
+            if(followjson.action == 'follow') {
+                followButton.classList.remove('bg-indigo-600','hover:bg-indigo-500')
+                followButton.classList.add('bg-gray-600','hover:bg-gray-500')
+            }
+            if(followjson.action == 'unfollow') {
+                followButton.classList.remove('bg-gray-600','hover:bg-gray-500')
+                followButton.classList.add('bg-indigo-600', 'hover:bg-indigo-500')
+            }
         }
         if(followjson.error){
             Swal.fire({

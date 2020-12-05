@@ -150,7 +150,15 @@ app.post('/join', async function (req, res) {
                 res.json({ error: 'password hashing error' })
             } else {
                 if (/^[a-z0-9_\-.]{1,20}$/.test(username)) {//check if username matches criteria
-                    users.insert({ name: username, password: hashedPassword })
+                    users.insert({
+                         name: username,
+                         password: hashedPassword,
+                         followers: [],
+                         messages: {
+                             unread: [],
+                             read: []
+                         },
+                    })
                         .then(user => {
                             console.log(user)
                             var token = makeID(20)
@@ -192,6 +200,30 @@ app.get('/explore', async function (req, res) {
             if (err) console.log(err)
             res.send(str)
         })
+    }
+})
+
+app.get('/messages', async (req,res) => {
+    var user = res.locals.requester
+    var loggedIn = res.locals.loggedIn
+    if(loggedIn){
+        var messages = user.messages
+        messages.unread = messages.unread.sort(function(x, y){
+            return y.time - x.time;
+        })
+        messages.read = messages.read.sort(function(x, y){
+            return y.time - x.time;
+        })
+        ejs.renderFile(__dirname + '/pages/messages.ejs', { user, loggedIn, messages }, (err, str) => {
+            if (err) console.log(err)
+            res.send(str)
+            // clear message count (move unread messages to read)
+            messages.read = messages.read.concat(messages.unread) //todo
+            messages.unread = []
+            users.update({ name: user.name }, { $set: { messages } })
+        })
+    } else {
+        res.redirect('/login')
     }
 })
 
@@ -327,6 +359,7 @@ app.post('/users/:name/follow', async function (req, res) {
         } else { //follow
             try {
                 await users.update({ name: followUser.name }, { $push: { followers: user.name } })
+                addMessage(followUser.name, `<a class='text-indigo-600' href='/users/${user.name}'>@${user.name}</a> is now following you.`)
                 res.json({ ok: 'now following', action: 'follow', new: followers.length + 1 })
             }
             catch (error) {
@@ -348,7 +381,6 @@ app.use((req, res, next) => { // 404 page always last
     }))
 })
 
-
 function findUser(token) {
     var user = tokens.find(t => t.token == token)
     return user
@@ -360,6 +392,24 @@ function findUserData(name) {
         try {
             var user = await users.findOne({ name: { $regex: new RegExp(regexName, "i") } });
             resolve(user)
+        } catch (error) {
+            reject(Error(error))
+        }
+    })
+}
+
+function addMessage(name, text, time = Date.now()){
+    return new Promise(async (resolve, reject) => {
+        try {
+            var user = await findUserData(name)
+            var messages = user.messages
+
+            messages.unread.push({
+                content: text,
+                time
+            })
+            var update = await users.update({ name: name }, { $set: { messages } })
+            resolve(update)
         } catch (error) {
             reject(Error(error))
         }
