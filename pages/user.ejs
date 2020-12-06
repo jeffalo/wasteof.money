@@ -1,44 +1,51 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<%- include('../partials/head.ejs', {page: "user"}); %>
+<%- include('../partials/head.ejs', {page: "user", vue: true}); %>
 
 
 <body class='bg-gray-100'>
     <%- include('../partials/nav.ejs', {active: "user_"+user.name, user:loggedInUser, loggedIn}); %>
-    <main class='container mx-auto px-4 mt-24 md:mt-16'>
+    <div id='data' class='hidden'>
+        <% if(loggedIn){ %>
+        <input type="hidden" id="loggedInUserID" value="<%= loggedInUser._id %>">
+        <% } %>
+        <input type="hidden" id="userName" value="<%= user.name %>">
+    </div>
+    <main class='container mx-auto px-4 mt-24 md:mt-16' id='app' v-cloak>
         <img src="/picture/<%= user.name %>" height="30px" class='rounded-full h-10 inline-block shadow'>
         <h1 class="inline-block font-bold">@<%= user.name %></h1>
         <% if(loggedInUser) { %>
-            <button data-user='<%= user.name %>' id='follow' class="group relative inline-block py-2 px-4 border border-transparent text-sm leading-5 font-medium rounded-md text-white <%= user.followers.includes(loggedInUser.name)? 'bg-gray-600 hover:bg-gray-500' : 'bg-indigo-600 hover:bg-indigo-500' %> transition duration-150 ease-in-out">
-                <span class="iconify inline-block mr-1" data-icon="uil:user-plus" data-inline="true"></span>
-                <span class='inline-block' id='follower-count'><%= user.followers ? user.followers.length.toString() : '0' %></span>
-            </button>
+        <button data-user='<%= user.name %>' id='follow'
+            class="group relative inline-block py-2 px-4 border border-transparent text-sm leading-5 font-medium rounded-md text-white <%= user.followers.includes(loggedInUser.name)? 'bg-gray-600 hover:bg-gray-500' : 'bg-indigo-600 hover:bg-indigo-500' %> transition duration-150 ease-in-out">
+            <span class="iconify inline-block mr-1" data-icon="uil:user-plus" data-inline="true"></span>
+            <span class='inline-block'
+                id='follower-count'><%= user.followers ? user.followers.length.toString() : '0' %></span>
+        </button>
         <% } %>
         <p class="text-gray-700 italic">id: <%= user._id %></p>
-        <% posts.forEach(post => { %>
-        <div
-            class="max-w-2xl flex p-6 mx-auto my-5 bg-white rounded-lg shadow-md <%= activePost==post._id ? 'bg-indigo-100' : 'bg-white' %>">
+        <div v-for="post in posts" class="max-w-2xl flex p-6 mx-auto my-5 bg-white rounded-lg shadow-md" v-bind:class="{ 'bg-indigo-100': post.highlight }">
             <div class="pt-1">
-                <img src="/picture/<%= post.poster %>" height="30px" class='rounded-full h-6 inline-block shadow'>
-                <h4 class="inline-block text-xl text-gray-900 leading-tight align-middle">@<%= post.poster %></h4>
-                <p class="text-base text-gray-600 leading-normal"><%= post.content %></p>
+                <img src="/picture/a" height="30px" class='rounded-full h-6 inline-block shadow'>
+                <h4 class="inline-block text-xl text-gray-900 leading-tight align-middle">@{{ post.poster }}</h4>
+                <p class="text-base text-gray-600 leading-normal">{{ post.content }}</p>
                 <p class="text-base text-gray-500 italic leading-normal">
-                    <%= new Date(post.time).toLocaleDateString("en-US") + ' ' + new Date(post.time).toLocaleTimeString("en-US") %>
-                    - <%= post._id %></p>
+                    {{ new Date(post.time).toLocaleDateString("en-US") + ' ' + new Date(post.time).toLocaleTimeString("en-US") }}
+                    - {{ post._id }}</p>
                 <% if(loggedInUser) { %>
                 <div>
-                    <span class='love <%= post.loves && post.loves.includes(loggedInUser.name) ? 'text-red-600' : '' %>'>
-                        <span data-post-id='<%= post._id %>'
+                    <span @click="lovePost(post._id)" tabindex="0" class="love"
+                        v-bind:class="{ 'text-red-600': post.loves.includes(loggedInUserID) }">
+                        <span v-bind:data-post-id='post._id'
                             class="iconify inline-block hover:text-red-400 transition-color duration-200 cursor-pointer"
                             data-icon="uil:heart" data-inline="true"></span>
                     </span>
 
-                    <span data-post-count-id='<%= post._id %>'><%= post.loves ? post.loves.length : '0' %></span>
+                    <span v-bind:data-post-count-id='post._id'>{{ post.loves.length }}</span>
                     <!-- text-red-600 -->
 
                     <!-- 
-                    <span data-post-id='<%= post._id %> '
+                    <span data-post-id='{{ post._id }}'
                         class="fav iconify inline-block hover:text-yellow-400 transition-color duration-200 cursor-pointer"
                         data-icon="uil:star" data-inline="true"></span>
                     -->
@@ -49,52 +56,78 @@
                 <% } %>
             </div>
         </div>
-        <% }) %>
+        <button v-if='!last' @click="loadMore()" href="/login"
+            class="max-w-2xl w-full mx-auto flex items-center justify-center mb-5 py-3 border border-transparent text-base font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 md:text-lg transition duration-150 ease-in-out">
+            Load more
+        </button>
     </main>
 </body>
 
 <%- include('../partials/scripts.ejs'); %>
-<script defer>
+<script>
     console.log('user script loaded')
-    var loves = document.querySelectorAll('.love')
-    var favs = document.querySelectorAll('.fav')
-    var followButton = document.querySelector('#follow')
-    loves.forEach(btn => {
-        var id = btn.children[0].dataset.postId
+    var user = document.getElementById('userName').value //TODO: is there a better way to do this? TODO: clean this the heck up
+    var userInput = document.getElementById('loggedInUserID')
 
-        btn.addEventListener('click', e => {
-            love(id, (newCount, action)=>{
-                console.log('loved')
-                if(action == 'love') {
-                    btn.classList.add('text-red-600') 
+    const urlParams = new URLSearchParams(window.location.search);
+    const onePost = urlParams.get('post');
+
+    if (userInput) var loggedInUserID = userInput.value
+    var app = new Vue({
+        el: '#app',
+        data: {
+            page: 1,
+            last: false,
+            posts: [],
+            loggedInUserID,
+            user
+        },
+        async mounted() {
+            if (onePost) {
+                console.log('loading one post')
+                this.page = 0
+                var res = await fetch(`/api/posts/${onePost}`)
+                var data = await res.json()
+                data.highlight = true
+                Vue.set(this.posts, 0, data)
+            } else {
+                console.log('loading all posts')
+                var res = await fetch(`/api/users/${user}/posts`)
+                var data = await res.json()
+                this.posts = data.posts
+                this.last = data.last
+            }
+        },
+        methods: {
+            loadMore: async function () {
+                if (this.page == 0) {
+                    this.posts = [] //remove all posts if the page was 0, because that means it was a specific post
                 }
-                if(action == 'unlove') {
-                    btn.classList.remove('text-red-600')
-                }
-                document.querySelector(`[data-post-count-id='${id}']`).innerText = newCount.toString()
-            })
-        })
+                this.page++
+                var res = await fetch(`/api/users/${user}/posts?page=${this.page}`)
+                var data = await res.json()
+                this.posts = data.posts = this.posts.concat(data.posts)
+                this.last = data.last
+            },
+            lovePost: async function (id) {
+                love(id, (newLoves, action) => {
+                    // add _id to post loves array client side, so that it updates
+                    var post = this.posts.find(i => i._id == id)
+                    if (post) {
+                        post.loves = newLoves
+                    }
+                })
+            }
+        }
     })
 
-    if(followButton){
-        followButton.addEventListener('click', e=>{
+    var followButton = document.querySelector('#follow')
+
+    if (followButton) {
+        followButton.addEventListener('click', e => {
             follow(followButton.dataset.user)
         })
     }
-
-/*     favs.forEach(btn => {
-        var id = btn.dataset.postId
-
-        btn.addEventListener('click', e => {
-            if (btn.classList.contains('text-yellow-500')) {
-                //unfav
-                btn.classList.remove('text-yellow-500')
-            } else {
-                //fab
-                btn.classList.add('text-yellow-500')
-            }
-        })
-    }) */
 
     async function follow(user) {
         console.log(`gonna follow ${user}`)
@@ -104,26 +137,26 @@
                 'Content-Type': 'application/json'
             }
         })
-        var followjson = await followres.json()   
+        var followjson = await followres.json()
         console.log(followjson)
-        if(followjson.ok){
+        if (followjson.ok) {
             document.getElementById('follower-count').innerText = followjson.new.toString() || 'error'
-            if(followjson.action == 'follow') {
-                followButton.classList.remove('bg-indigo-600','hover:bg-indigo-500')
-                followButton.classList.add('bg-gray-600','hover:bg-gray-500')
+            if (followjson.action == 'follow') {
+                followButton.classList.remove('bg-indigo-600', 'hover:bg-indigo-500')
+                followButton.classList.add('bg-gray-600', 'hover:bg-gray-500')
             }
-            if(followjson.action == 'unfollow') {
-                followButton.classList.remove('bg-gray-600','hover:bg-gray-500')
+            if (followjson.action == 'unfollow') {
+                followButton.classList.remove('bg-gray-600', 'hover:bg-gray-500')
                 followButton.classList.add('bg-indigo-600', 'hover:bg-indigo-500')
             }
         }
-        if(followjson.error){
+        if (followjson.error) {
             Swal.fire({
                 icon: 'error',
                 title: 'Failed to follow',
                 text: followjson.error,
                 footer: '<a href="https://github.com/jeffalo/wasteof.money/issues">Report issues</a>'
-            })  
+            })
         }
     }
 
@@ -140,16 +173,16 @@
         if (lovejson.ok) {
             var action = lovejson.action
             var newCount = lovejson.new
-            if(action == 'love') callback(newCount, 'love')
-            if(action == 'unlove') callback(newCount, 'unlove')
+            if (action == 'love') callback(newCount, 'love')
+            if (action == 'unlove') callback(newCount, 'unlove')
         }
-        if(lovejson.error){
+        if (lovejson.error) {
             Swal.fire({
                 icon: 'error',
                 title: 'Failed to love',
                 text: lovejson.error,
                 footer: '<a href="https://github.com/jeffalo/wasteof.money/issues">Report issues</a>'
-            })  
+            })
         }
     }
 </script>

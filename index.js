@@ -151,13 +151,13 @@ app.post('/join', async function (req, res) {
             } else {
                 if (/^[a-z0-9_\-.]{1,20}$/.test(username)) {//check if username matches criteria
                     users.insert({
-                         name: username,
-                         password: hashedPassword,
-                         followers: [],
-                         messages: {
-                             unread: [],
-                             read: []
-                         },
+                        name: username,
+                        password: hashedPassword,
+                        followers: [],
+                        messages: {
+                            unread: [],
+                            read: []
+                        },
                     })
                         .then(user => {
                             console.log(user)
@@ -203,24 +203,71 @@ app.get('/explore', async function (req, res) {
     }
 })
 
-app.get('/messages', async (req,res) => {
+app.get('/api/messages', async (req, res) => {
     var user = res.locals.requester
     var loggedIn = res.locals.loggedIn
-    if(loggedIn){
+    var page = parseInt(req.query.page) || 1
+
+    if (loggedIn) {
+        var unread = user.messages.unread // don't paginate unread messages? 
+        var read = paginate(user.messages.read, 15, page)
+        var last = false
+        if (paginate(user.messages.read, 15, page + 1).length == 0) last = true //set last to true if this is the last page
+        console.log(read)
+        var messages = {
+            unread,
+            read,
+            last
+        }
+        res.json(messages)
+    } else {
+        res.json({ error: 'requires login' })
+    }
+})
+
+app.get('/api/messages/count', async (req, res) => {
+    var user = res.locals.requester
+    var loggedIn = res.locals.loggedIn
+    if (loggedIn) {
         var messages = user.messages
-        messages.unread = messages.unread.sort(function(x, y){
+        res.json({ count: messages.unread.length })
+    } else {
+        res.json({ error: 'requires login' })
+    }
+})
+
+app.post('/api/messages/read', async (req, res) => {
+    var user = res.locals.requester
+    var loggedIn = res.locals.loggedIn
+    if (loggedIn) {
+        var messages = user.messages
+        messages.unread = messages.unread.sort(function (x, y) {
             return y.time - x.time;
         })
-        messages.read = messages.read.sort(function(x, y){
+        messages.read = messages.read.sort(function (x, y) {
             return y.time - x.time;
         })
-        ejs.renderFile(__dirname + '/pages/messages.ejs', { user, loggedIn, messages }, (err, str) => {
+        messages.read = messages.read.concat(messages.unread)
+        messages.unread = []
+        try {
+            await users.update({ name: user.name }, { $set: { messages } })
+            res.json({ ok: 'cleared messages' })
+        } catch (error) {
+            console.log(error)
+            res.json({ error: 'something went wrong' })
+        }
+    } else {
+        res.json({ error: 'requires login' })
+    }
+})
+
+app.get('/messages', async (req, res) => {
+    var user = res.locals.requester
+    var loggedIn = res.locals.loggedIn
+    if (loggedIn) {
+        ejs.renderFile(__dirname + '/pages/messages.ejs', { user, loggedIn }, (err, str) => {
             if (err) console.log(err)
             res.send(str)
-            // clear message count (move unread messages to read)
-            messages.read = messages.read.concat(messages.unread) //todo
-            messages.unread = []
-            users.update({ name: user.name }, { $set: { messages } })
         })
     } else {
         res.redirect('/login')
@@ -237,17 +284,47 @@ app.get('/users', function (req, res) {
     })
 })
 
+app.get('/api/users/:user', async (req, res) => {
+    var user = await findUserData(req.params.user)
+    if (user) {
+        res.json({
+            _id: user._id,
+            name: user.name,
+            followers: user.followers.length
+        })
+    } else {
+        res.json({ error: 'no user found' })
+    }
+})
+
+//TODO: user follower api
+
+app.get('/api/users/:user/posts', async (req, res) => {
+    var user = await findUserData(req.params.user)
+    var userPosts = await posts.find({ poster: req.params.user }, { sort: { time: -1, _id: -1 } }) //sort by time but fallback to id
+    var page = parseInt(req.query.page) || 1
+    if (user) {
+        var pagePosts = paginate(userPosts, 15, page)
+        var last = false
+        if (paginate(userPosts, 15, page + 1).length == 0) last = true //set last to true if this is the last page
+        res.json({ posts: pagePosts, last })
+    } else {
+        res.json({ error: 'no user found' })
+    }
+})
+
+app.get('/api/users/:user/posts/:post', async (req, res) => {
+    res.redirect(`/api/posts/${req.params.post}`)
+})
+
 app.get('/users/:user', async function (req, res, next) {
     var loggedInUser = res.locals.requester
     var loggedIn = res.locals.loggedIn
 
     var user = await findUserData(req.params.user)
-    var userPosts = await posts.find({ poster: req.params.user }, { sort: { time: -1, _id: -1 } }) //sort by time but fallback to id
-
-    var post = req.query.post
 
     if (user) {
-        ejs.renderFile(__dirname + '/pages/user.ejs', { user, loggedInUser, loggedIn, posts: userPosts, activePost: post }, (err, str) => {
+        ejs.renderFile(__dirname + '/pages/user.ejs', { user, loggedInUser, loggedIn }, (err, str) => {
             if (err) console.log(err)
             res.send(str)
         })
@@ -263,6 +340,15 @@ app.get('/picture/:user', async function (req, res, next) {
         var file = jdenticon.toPng(req.params.user, 128)
         res.set('Content-Type', 'image/png')
         res.send(file)
+    }
+})
+
+app.get('/api/posts/:post', async function (req, res) {
+    try {
+        var post = await posts.findOne({ _id: req.params.post })
+        res.json(post)
+    } catch {
+        res.json({ error: 'no post found' })
     }
 })
 
@@ -303,21 +389,21 @@ app.post('/posts/:id/love', async function (req, res) {
                 .then(post => {
                     if (post) {
                         var loves = post.loves || []
-                        if (!loves.includes(user.name)) {
-                            loves.push(user.name)
+                        if (!loves.includes(user._id.toString())) {
+                            loves.push(user._id.toString())
                             posts.update({ _id: req.params.id }, { $set: { loves: loves } })
                                 .then(() => {
-                                    res.json({ ok: 'loved post', new: loves.length, action: 'love' })
+                                    res.json({ ok: 'loved post', new: loves, action: 'love' })
                                 })
                                 .catch(updateerr => {
                                     console.log(updateerr)
                                     res.json({ error: updateerr })
                                 })
                         } else {
-                            loves = loves.filter(i => i !== user.name)
+                            loves = loves.filter(i => i !== user._id.toString())
                             posts.update({ _id: req.params.id }, { $set: { loves: loves } })
                                 .then(() => {
-                                    res.json({ ok: 'unloved', new: loves.length, action: 'unlove' })
+                                    res.json({ ok: 'unloved', new: loves, action: 'unlove' })
                                 })
                                 .catch(updateerr => {
                                     console.log(updateerr)
@@ -398,7 +484,7 @@ function findUserData(name) {
     })
 }
 
-function addMessage(name, text, time = Date.now()){
+function addMessage(name, text, time = Date.now()) {
     return new Promise(async (resolve, reject) => {
         try {
             var user = await findUserData(name)
@@ -424,6 +510,11 @@ function makeID(length) {
         result += characters.charAt(Math.floor(Math.random() * charactersLength));
     }
     return result;
+}
+
+function paginate(array, page_size, page_number) {
+    // human-readable page numbers usually start with 1, so we reduce 1 in the first argument
+    return array.slice((page_number - 1) * page_size, page_number * page_size);
 }
 
 app.listen(port, () => {
