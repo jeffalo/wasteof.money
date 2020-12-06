@@ -214,10 +214,8 @@ app.get('/settings', async function (req, res) {
         })
     } else {
         //logged out explore page, show trending posts etc
-        ejs.renderFile(__dirname + '/pages/settings.ejs', { user, loggedIn }, (err, str) => {
-            if (err) console.log(err)
-            res.send(str)
-        })
+        res.redirect('/')
+        
     }
 })
 
