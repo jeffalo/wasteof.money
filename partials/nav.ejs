@@ -2,7 +2,7 @@
     <div class="container mx-auto flex flex-wrap items-center">
         <div class="flex w-full md:w-1/2 justify-center md:justify-start text-white font-bold">
             <a class="text-white no-underline hover:text-white hover:no-underline" href="/">
-                <span class="text-2xl pl-2"><img class='h-10 pr-2 inline-block' src='/bill.svg'>wasteof.money</span>
+                <span class="text-2xl"><img class='h-10 pr-2 inline-block' src='/bill.svg'>wasteof.money</span>
             </a>
         </div>
         <div class="flex w-full content-center justify-between md:w-1/2 md:justify-end">
@@ -29,7 +29,7 @@
                     <a class="align-middle inline-block py-2 px-4 <%= active=='settings' ? 'text-white no-underline' : 'text-gray-600 no-underline hover:text-gray-200 hover:text-underline' %>"
                         href="/settings"><span class="iconify" data-icon="uil:cog"></span></a>
                 </li>
-                <li class="mr-3">
+                <li class="mr-3 hidden md:inline">
                     <a class="align-middle inline-block py-2 px-4 <%= active=='logout' ? 'text-white no-underline' : 'text-gray-600 no-underline hover:text-gray-200 hover:text-underline' %>"
                         href="/logout"><span class="iconify" data-icon="uil:exit"></span></a>
                 </li>
