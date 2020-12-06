@@ -219,6 +219,12 @@ app.get('/api/messages', async (req, res) => {
             read,
             last
         }
+        messages.unread = messages.unread.sort(function (x, y) {
+            return y.time - x.time;
+        })
+        messages.read = messages.read.sort(function (x, y) {
+            return y.time - x.time;
+        })
         res.json(messages)
     } else {
         res.json({ error: 'requires login' })
@@ -241,12 +247,6 @@ app.post('/api/messages/read', async (req, res) => {
     var loggedIn = res.locals.loggedIn
     if (loggedIn) {
         var messages = user.messages
-        messages.unread = messages.unread.sort(function (x, y) {
-            return y.time - x.time;
-        })
-        messages.read = messages.read.sort(function (x, y) {
-            return y.time - x.time;
-        })
         messages.read = messages.read.concat(messages.unread)
         messages.unread = []
         try {
