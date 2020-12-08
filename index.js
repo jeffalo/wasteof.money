@@ -449,8 +449,8 @@ app.post('/users/:name/follow', async function (req, res) {
     if (loggedIn) {
         var followUser = await findUserData(req.params.name)
         var followers = followUser.followers || []
-        if (followers.includes(user.name)) { //already follower, unfollow
-            followers = followers.filter(i => i !== user.name)
+        if (followers.includes(user._id.toString())) { //already follower, unfollow
+            followers = followers.filter(i => i !== user._id.toString())
             try {
                 await users.update({ name: followUser.name }, { $set: { followers } })
                 res.json({ ok: 'unfollowing', action: 'unfollow', new: followers.length })
@@ -461,7 +461,7 @@ app.post('/users/:name/follow', async function (req, res) {
             }
         } else { //follow
             try {
-                await users.update({ name: followUser.name }, { $push: { followers: user.name } })
+                await users.update({ name: followUser.name }, { $push: { followers: user._id.toString() } })
                 addMessage(followUser.name, `<a class='text-indigo-600' href='/users/${user.name}'>@${user.name}</a> is now following you.`)
                 res.json({ ok: 'now following', action: 'follow', new: followers.length + 1 })
             }
