@@ -47,12 +47,7 @@
         </div>
     </div>
 </nav>
-<%
-if (typeof noPost === 'undefined') {
-    noPost = false
-}
-%>
 
-<% if (!noPost) { %>
+<% if (!locals.noPost) { %>
     <%- include('../partials/post.ejs', {user}); %>
 <% } %>
