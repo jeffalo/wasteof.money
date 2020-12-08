@@ -202,6 +202,23 @@ app.get('/explore', async function (req, res) {
         })
     }
 })
+app.get('/settings', async function (req, res) {
+    var user = res.locals.requester
+    var loggedIn = res.locals.loggedIn
+
+    if (loggedIn) {
+        // logged in settings page
+        ejs.renderFile(__dirname + '/pages/settings.ejs', { user, loggedIn }, (err, str) => {
+            if (err) console.log(err)
+            res.send(str)
+        })
+    } else {
+        //logged out settings page, redirect
+        res.redirect('/')
+        
+    }
+})
+
 
 app.get('/api/messages', async (req, res) => {
     var user = res.locals.requester
