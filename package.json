@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "nodemon index.js",
     "serve": "node index.js",
-    "tailwind:css": "postcss static/tailwind.css -o static/style.css"
+    "tailwind:css": "postcss static/tailwind.css -o static/style.css",
+    "setup": "node env.js"
   },
   "keywords": [],
   "author": "",
@@ -21,7 +22,8 @@
     "jdenticon": "^3.0.1",
     "monk": "^7.3.2",
     "postcss": "^8.1.7",
-    "postcss-cli": "^8.3.0"
+    "postcss-cli": "^8.3.0",
+    "prompts": "^2.4.0"
   },
   "devDependencies": {
     "tailwindcss": "^1.9.6"
