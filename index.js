@@ -10,6 +10,8 @@ const port = process.env.LISTEN_PORT || 8080
 const app = express()
 
 require('dotenv').config()
+if (typeof process.env.DB_URL !== 'undefined') {
+
 const db = require('monk')(process.env.DB_URL)
 
 //database
@@ -537,3 +539,8 @@ function paginate(array, page_size, page_number) {
 app.listen(port, () => {
     console.log(`listening on http://localhost:${port}`)
 });
+} else {
+    console.log("Setting up env variables.")
+    const setup = require('./env.js')
+    setup
+}
