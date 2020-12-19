@@ -20,8 +20,12 @@ These instructions may look hard, but they're actually pretty easy! @GrahamSH-LL
 - Click "Connect"
 - Click "Connect your application"
 - Copy the URL in the middle of the popup
+### Env
+#### Easy Way
+- Run ``npm run setup``!
+#### Manual Way
 - Open the repo in vscode (or any editor) and create a file called .env
-- Add the text "DB_URL=", and paste the copied string after the = sign.
+- Add the text "DB_URL=", and paste the copied string after the = sign
 - Replace <password> with your password, and <dbname> with "social"
 - Save the file
 ### Serving
