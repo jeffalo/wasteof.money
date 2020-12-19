@@ -1,5 +1,8 @@
 const prompts = require("prompts");
 const fs = require("fs");
+require("dotenv").config();
+const port = process.env.LISTEN_PORT || 8080;
+const url = process.env.DB_URL || '';
 
 (async () => {
   const response = await prompts([
@@ -8,6 +11,7 @@ const fs = require("fs");
       name: "url",
       message:
         "What is your MongoDB URL? (If you are using MongoDB Atlas, you can keep the <> values)",
+      initial: url
     },
     {
       type: "select",
@@ -35,7 +39,7 @@ const fs = require("fs");
       type: "text",
       name: "port",
       message: "What is your port?",
-      initial: "8080",
+      initial: port,
     },
   ]);
 
