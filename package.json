@@ -21,6 +21,7 @@
     "express": "^4.17.1",
     "jdenticon": "^3.0.1",
     "monk": "^7.3.2",
+    "nodemon": "^2.0.6",
     "postcss": "^8.1.7",
     "postcss-cli": "^8.3.0",
     "prompts": "^2.4.0"
