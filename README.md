@@ -30,7 +30,8 @@ npm run tailwind:css
 
 #### .env
 Set up your .env
-Either follow these instructions, or run ``npm run setup``
+
+Either run ``npm run setup`` (recommended), or follow these instructions.
 - MongoDB needs DB_URL env variable (For example, DB_URL=localhost/social)
 - (Optional) LISTEN_PORT env variable default 8080
 
