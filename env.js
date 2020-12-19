@@ -1,12 +1,13 @@
 const prompts = require("prompts");
 const fs = require("fs");
+
 (async () => {
 
   const response = await prompts([
     {
       type: "text",
       name: "url",
-      message: "What is your MongoDB URL?",
+      message: "What is your MongoDB URL? (If you are using MongoDB Atlas, you can keep the <> values)",
     },
     {
       type: 'select',
@@ -19,8 +20,8 @@ const fs = require("fs");
       initial: 1
     },
     {
-      type: prev => prev == 'atlas' ? 'text' : null,
-      name: "pw",
+      type: prev => prev == 'atlas' ? 'password' : null,
+      name: "password",
       message: "What is your MongoDB Password?",
     },
     {
