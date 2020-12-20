@@ -2,7 +2,7 @@ const prompts = require("prompts");
 const fs = require("fs");
 require("dotenv").config();
 const port = process.env.LISTEN_PORT || 8080;
-const url = process.env.DB_URL || '';
+const url = process.env.DB_URL || 'localhost/social';
 
 (async () => {
   const response = await prompts([
@@ -38,7 +38,7 @@ const url = process.env.DB_URL || '';
     {
       type: "text",
       name: "port",
-      message: "What is your port?",
+      message: "What port should the site run on?",
       initial: port,
     },
   ]);
@@ -51,7 +51,7 @@ const url = process.env.DB_URL || '';
     "utf8",
     function () {
       console.log("Your settings have been written to .env!");
-      console.log("Run npm run serve to serve your instance.");
+      console.log("Run npm run serve to start the server or npm run dev to start it with nodemon.");
     }
   );
 })();
