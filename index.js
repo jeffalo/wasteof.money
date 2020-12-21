@@ -8,7 +8,7 @@ var cookieParser = require('cookie-parser')
 var bcrypt = require('bcrypt')
 const fs = require('fs')
 const path = require('path');
-const jdenticon = require("jdenticon")
+const jdenticon = require("jdenticon");
 const port = process.env.LISTEN_PORT || 8080
 const app = express()
 
@@ -67,15 +67,24 @@ app.get('/', function (req, res) {
     })
 })
 
-
 //docs
+app.get('/docs', async (req,res, next)=>{
+    var user = res.locals.requester
+    var loggedIn = res.locals.loggedIn
+
+    ejs.renderFile(__dirname + '/pages/index.ejs', { user, loggedIn }, (err, str) => {
+        if (err) console.log(err)
+        res.send(str)
+    })
+})
+
 app.get('/docs/:page', async (req,res, next)=>{
     var user = res.locals.requester
     var loggedIn = res.locals.loggedIn
 
     var page = path.basename(req.params.page);
 
-    try{
+    try {
         var post = await fs.promises.readFile(`./docs/${page}.md`, 'utf-8')
         const mattered = matter(post)
 
