@@ -9,10 +9,12 @@ var bcrypt = require('bcrypt')
 const fs = require('fs')
 const path = require('path');
 const jdenticon = require("jdenticon")
+
+require('dotenv').config()
+
 const port = process.env.LISTEN_PORT || 8080
 const app = express()
 
-require('dotenv').config()
 const db = require('monk')(process.env.DB_URL)
 
 //database
