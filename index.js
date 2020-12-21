@@ -114,7 +114,7 @@ app.get('/docs/:page', async (req,res, next)=>{
     
     })
     
-    
+})  
     app.get('/login', function (req, res) {
         var user = res.locals.requester
         var loggedIn = res.locals.loggedIn
@@ -131,7 +131,7 @@ app.get('/docs/:page', async (req,res, next)=>{
     });
 
 
-})
+
 
 app.get('/join', function (req, res) {
     var user = res.locals.requester
