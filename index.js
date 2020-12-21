@@ -71,13 +71,13 @@ app.get('/', function (req, res) {
 
 
 //docs
-app.get('/docs/:page', async (req,res, next)=>{
+app.get('/docs/:page', async (req, res, next) => {
     var user = res.locals.requester
     var loggedIn = res.locals.loggedIn
 
     var page = path.basename(req.params.page);
 
-    try{
+    try {
         var post = await fs.promises.readFile(`./docs/${page}.md`, 'utf-8')
         const mattered = matter(post)
 
@@ -86,16 +86,16 @@ app.get('/docs/:page', async (req,res, next)=>{
             meta: mattered.data,
             body: html
         }
-    
+
         ejs.renderFile(__dirname + '/pages/docs.ejs', { user, loggedIn, doc }, (err, str) => {
             if (err) console.log(err)
             res.send(str)
         })
     }
-    catch (err){
+    catch (err) {
         if (err.code === 'ENOENT') {
             next()
-          } else {
+        } else {
             throw err;
         }
     }
@@ -224,21 +224,21 @@ app.post('/join', async function (req, res) {
     }
 })
 
-app.post('/update-username', async (req, res) =>{
+app.post('/update-username', async (req, res) => {
     var userCookie = req.cookies.token
 
     var user = res.locals.requester
     var loggedIn = res.locals.loggedIn
     var username = req.body.username
-    if(loggedIn && req.xhr){
-        if(usernameRegex.test(username)){
-            try{
+    if (loggedIn && req.xhr) {
+        if (usernameRegex.test(username)) {
+            try {
                 await users.update({ _id: user._id }, { $set: { name: username } })
                 tokens = tokens.filter((obj) => {
                     return obj.token !== userCookie;
                 });
                 res.cookie('token', '')
-                res.json({ok:username})
+                res.json({ ok: username })
             } catch (err) {
                 if (err.code == 11000) {
                     res.json({ error: 'username already taken' })
@@ -251,18 +251,18 @@ app.post('/update-username', async (req, res) =>{
             res.json({ error: `must match regex ${usernameRegex.toString()}` })
         }
     } else {
-        res.json({error: 'not logged in, or not made with xhr'})
+        res.json({ error: 'not logged in, or not made with xhr' })
     }
 })
 
-app.post('/delete-account', async (req,res) =>{
+app.post('/delete-account', async (req, res) => {
     var user = res.locals.requester
     var loggedIn = res.locals.loggedIn
 
-    if(loggedIn && req.xhr && user){
-        res.json({error:'sorry accountc ant be deletd yet'})
+    if (loggedIn && req.xhr && user) {
+        res.json({ error: 'sorry accountc ant be deletd yet' })
     } else {
-        res.json({error:'not logged in, not requested with xhr or no user found'})
+        res.json({ error: 'not logged in, not requested with xhr or no user found' })
     }
 })
 
@@ -297,7 +297,7 @@ app.get('/settings', async function (req, res) {
     } else {
         //logged out settings page, redirect
         res.redirect('/')
-        
+
     }
 })
 
@@ -402,7 +402,7 @@ app.get('/api/users/:user/posts', async (req, res) => {
     var user = await findUserData(req.params.user)
     var userPosts = await posts.find({ poster: user._id }, { sort: { time: -1, _id: -1 } }) //sort by time but fallback to id
 
-    for(var i in userPosts){
+    for (var i in userPosts) {
         var poster = await findUserDataByID(userPosts[i].poster)
         userPosts[i].poster = poster.name // this is inefficent, we know the user will always be the smae, but hopefully mongodb is fast so this won't be an issue
     }
@@ -539,27 +539,31 @@ app.post('/users/:name/follow', async function (req, res) {
     var loggedIn = res.locals.loggedIn
     if (loggedIn) {
         var followUser = await findUserData(req.params.name)
-        var followers = followUser.followers || []
-        if (followers.includes(user._id.toString())) { //already follower, unfollow
-            followers = followers.filter(i => i !== user._id.toString())
-            try {
-                await users.update({ name: followUser.name }, { $set: { followers } })
-                res.json({ ok: 'unfollowing', action: 'unfollow', new: followers.length })
+        if (followUser) {
+            var followers = followUser.followers || []
+            if (followers.includes(user._id.toString())) { //already follower, unfollow
+                followers = followers.filter(i => i !== user._id.toString())
+                try {
+                    await users.update({ name: followUser.name }, { $set: { followers } })
+                    res.json({ ok: 'unfollowing', action: 'unfollow', new: followers.length })
+                }
+                catch (error) {
+                    console.log(error)
+                    res.json({ error: 'database error' })
+                }
+            } else { //follow
+                try {
+                    await users.update({ name: followUser.name }, { $push: { followers: user._id.toString() } })
+                    addMessage(followUser.name, `<a class='text-indigo-600' href='/users/${user.name}'>@${user.name}</a> is now following you.`)
+                    res.json({ ok: 'now following', action: 'follow', new: followers.length + 1 })
+                }
+                catch (error) {
+                    console.log(error)
+                    res.json({ error: 'database error' })
+                }
             }
-            catch (error) {
-                console.log(error)
-                res.json({ error: 'database error' })
-            }
-        } else { //follow
-            try {
-                await users.update({ name: followUser.name }, { $push: { followers: user._id.toString() } })
-                addMessage(followUser.name, `<a class='text-indigo-600' href='/users/${user.name}'>@${user.name}</a> is now following you.`)
-                res.json({ ok: 'now following', action: 'follow', new: followers.length + 1 })
-            }
-            catch (error) {
-                console.log(error)
-                res.json({ error: 'database error' })
-            }
+        } else {
+            res.json({ error: 'no user found' })
         }
     } else {
         res.json({ error: 'needs to be logged in' })
