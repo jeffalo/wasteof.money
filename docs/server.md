@@ -1,4 +1,8 @@
-These instructions may look hard, but they're actually pretty easy! @GrahamSH-LLK completed them on a Chromebook, with no problems. Just follow the instructions! If you have any problems, ask @GrahamSH
+---
+title: Setting up a cloud development database
+description: Instructions on how to setup a cloud database for development.
+---
+These instructions may look hard, but they're actually pretty easy! GrahamSH completed them on a Chromebook, with no problems. Just follow the instructions!
 ### Account
 - First, make an account at https://www.mongodb.com/cloud/atlas/register. Fill out the fields, or sign in with Google.
 - When it prompts you to pick a provider, pick any option

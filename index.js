@@ -1,9 +1,13 @@
 const express = require('express')
 const ejs = require('ejs')
+const marked = require('marked')
+const matter = require('gray-matter');
+
 var bodyParser = require('body-parser')
 var cookieParser = require('cookie-parser')
 var bcrypt = require('bcrypt')
 const fs = require('fs')
+const path = require('path');
 const jdenticon = require("jdenticon")
 const port = process.env.LISTEN_PORT || 8080
 const app = express()
@@ -61,6 +65,39 @@ app.get('/', function (req, res) {
         if (err) console.log(err)
         res.send(str)
     })
+})
+
+
+//docs
+app.get('/docs/:page', async (req,res, next)=>{
+    var user = res.locals.requester
+    var loggedIn = res.locals.loggedIn
+
+    var page = path.basename(req.params.page);
+
+    try{
+        var post = await fs.promises.readFile(`./docs/${page}.md`, 'utf-8')
+        const mattered = matter(post)
+
+        const html = marked(mattered.content);
+        var doc = {
+            title: mattered.data.title,
+            body: html
+        }
+    
+        ejs.renderFile(__dirname + '/pages/docs.ejs', { user, loggedIn, doc }, (err, str) => {
+            if (err) console.log(err)
+            res.send(str)
+        })
+    }
+    catch (err){
+        if (err.code === 'ENOENT') {
+            next()
+          } else {
+            throw err;
+        }
+    }
+
 })
 
 
