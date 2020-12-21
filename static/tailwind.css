@@ -30,7 +30,7 @@
 }
 
 .markdown a {
-	@apply text-blue-600 font-semibold;
+	@apply text-indigo-600 font-semibold;
 }
 
 .markdown strong a {
