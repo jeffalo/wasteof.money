@@ -45,7 +45,7 @@ app.use(async (req, res, next) => {
     var userCookie = req.cookies.token
     var user = findUser(userCookie)
     if (user) {
-        res.locals.requester = await findUserData(user.username)
+        res.locals.requester = await findUserDataByID(user.id)
         res.locals.loggedIn = true
     } else {
         res.locals.loggedIn = false
@@ -123,7 +123,7 @@ app.post('/login', async function (req, res) {
             bcrypt.compare(password, user.password, function (err, result) {
                 if (result) {
                     var token = makeID(20)
-                    tokens.push({ username: user.name, token: token })
+                    tokens.push({ id: user._id, token: token })
                     res.cookie('token', token)
                     res.json({ ok: 'logged in successfully' })
                 } else {
@@ -163,7 +163,7 @@ app.post('/join', async function (req, res) {
                         .then(user => {
                             console.log(user)
                             var token = makeID(20)
-                            tokens.push({ username: user.name, token: token })
+                            tokens.push({ id: user._id, token: token })
                             res.cookie('token', token)
                             res.json({ ok: 'made account successfully' })
                         })
