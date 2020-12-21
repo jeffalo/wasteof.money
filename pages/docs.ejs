@@ -7,7 +7,7 @@
     <%- include('../partials/nav.ejs', {active: "docs", user, loggedIn}); %>
 
     <main class='container mx-auto px-4 mt-24 md:mt-16'>
-        <h1 class="font-bold text-2xl"><%= doc.title %></h1>
+        <h1 class="font-bold text-2xl"><%= doc.meta.title %></h1>
         <article class='markdown'>
             <%- doc.body %>
         </article>
@@ -15,5 +15,9 @@
 </body>
 
 <%- include('../partials/scripts.ejs'); %>
-
+<% if(doc.meta.code) { %>
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.4.1/build/styles/github.min.css">
+    <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.4.1/build/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+<% } %>
 </html>

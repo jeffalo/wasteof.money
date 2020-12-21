@@ -1,6 +1,7 @@
 ---
 title: Setting up a cloud development database
 description: Instructions on how to setup a cloud database for development.
+code: true
 ---
 These instructions may look hard, but they're actually pretty easy! GrahamSH completed them on a Chromebook, with no problems. Just follow the instructions!
 ### Account
@@ -26,7 +27,10 @@ These instructions may look hard, but they're actually pretty easy! GrahamSH com
 - Copy the URL in the middle of the popup
 ### Env
 #### Easy Way
-- Run ``npm run setup``!
+- Run
+```console
+npm run setup
+```
 #### Manual Way
 - Open the repo in vscode (or any editor) and create a file called .env
 - Add the text "DB_URL=", and paste the copied string after the = sign

@@ -81,7 +81,7 @@ app.get('/docs/:page', async (req,res, next)=>{
 
         const html = marked(mattered.content);
         var doc = {
-            title: mattered.data.title,
+            meta: mattered.data,
             body: html
         }
     
