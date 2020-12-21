@@ -101,6 +101,8 @@
         methods: {
             loadMore: async function () {
                 if (this.page == 0) {
+                    var newURL = location.href.split("?")[0];
+                    window.history.pushState('object', document.title, newURL);
                     this.posts = [] //remove all posts if the page was 0, because that means it was a specific post
                 }
                 this.page++
