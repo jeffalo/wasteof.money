@@ -21,6 +21,8 @@ var saltRounds = 10
 
 var tokens = []
 
+const usernameRegex = /^[a-z0-9_\-.]{1,20}$/
+
 app.use(express.static('static', {
     extensions: ['html', 'htm']
 }));
@@ -148,7 +150,7 @@ app.post('/join', async function (req, res) {
             if (err) {
                 res.json({ error: 'password hashing error' })
             } else {
-                if (/^[a-z0-9_\-.]{1,20}$/.test(username)) {//check if username matches criteria
+                if (usernameRegex.test(username)) {//check if username matches criteria
                     users.insert({
                         name: username,
                         password: hashedPassword,
@@ -174,12 +176,54 @@ app.post('/join', async function (req, res) {
                             }
                         })
                 } else {//username does not match criterai
-                    res.json({ error: 'must match regex /^[a-z0-9_\-.]{1,20}$/' })
+                    res.json({ error: `must match regex ${usernameRegex.toString()}` })
                 }
             }
         });
     } else {
         res.redirect('/')
+    }
+})
+
+app.post('/update-username', async (req, res) =>{
+    var userCookie = req.cookies.token
+
+    var user = res.locals.requester
+    var loggedIn = res.locals.loggedIn
+    var username = req.body.username
+    if(loggedIn && req.xhr){
+        if(usernameRegex.test(username)){
+            try{
+                await users.update({ _id: user._id }, { $set: { name: username } })
+                tokens = tokens.filter((obj) => {
+                    return obj.token !== userCookie;
+                });
+                res.cookie('token', '')
+                res.json({ok:username})
+            } catch (err) {
+                if (err.code == 11000) {
+                    res.json({ error: 'username already taken' })
+                } else {
+                    console.log(err)
+                    res.json({ error: 'uncaught database error: ' + err.code })
+                }
+            }
+        } else {
+            res.json({ error: `must match regex ${usernameRegex.toString()}` })
+        }
+    } else {
+        res.json({error: 'not logged in, or not made with xhr'})
+    }
+})
+
+app.post('/delete-account', async (req,res) =>{
+    var user = res.locals.requester
+    var loggedIn = res.locals.loggedIn
+
+    if(loggedIn && req.xhr && user){
+        res.json({error:'sorry accountc ant be deletd yet'})
+    } else {
+        res.json({error:'not logged in, not requested with xhr or no user found'})
     }
 })
 
@@ -317,7 +361,13 @@ app.get('/api/users/:user', async (req, res) => {
 
 app.get('/api/users/:user/posts', async (req, res) => {
     var user = await findUserData(req.params.user)
-    var userPosts = await posts.find({ poster: req.params.user }, { sort: { time: -1, _id: -1 } }) //sort by time but fallback to id
+    var userPosts = await posts.find({ poster: user._id }, { sort: { time: -1, _id: -1 } }) //sort by time but fallback to id
+
+    for(var i in userPosts){
+        var poster = await findUserDataByID(userPosts[i].poster)
+        userPosts[i].poster = poster.name // this is inefficent, we know the user will always be the smae, but hopefully mongodb is fast so this won't be an issue
+    }
+
     var page = parseInt(req.query.page) || 1
     if (user) {
         var pagePosts = paginate(userPosts, 15, page)
@@ -362,6 +412,8 @@ app.get('/picture/:user', async function (req, res, next) {
 app.get('/api/posts/:post', async function (req, res) {
     try {
         var post = await posts.findOne({ _id: req.params.post })
+        var poster = await findUserDataByID(post.poster)
+        post.poster = poster.name
         res.json(post)
     } catch {
         res.json({ error: 'no post found' })
@@ -371,7 +423,8 @@ app.get('/api/posts/:post', async function (req, res) {
 app.get('/posts/:post', async function (req, res, next) {
     try {
         var post = await posts.findOne({ _id: req.params.post })
-        res.redirect(`/users/${post.poster}?post=${post._id}`)
+        var poster = await findUserDataByID(post.poster)
+        res.redirect(`/users/${poster.name}?post=${post._id}`)
     } catch {
         next() //404
     }
@@ -382,7 +435,7 @@ app.post('/post', async function (req, res) {
     var loggedIn = res.locals.loggedIn
 
     if (loggedIn) {
-        posts.insert({ content: req.body.post, poster: user.name, time: Date.now(), loves: [] })
+        posts.insert({ content: req.body.post, poster: user._id, time: Date.now(), loves: [] })
             .then(post => {
                 res.json({ ok: 'made post', id: post._id })
             })
@@ -493,6 +546,17 @@ function findUserData(name) {
     return new Promise(async (resolve, reject) => {
         try {
             var user = await users.findOne({ name: { $regex: new RegExp(regexName, "i") } });
+            resolve(user)
+        } catch (error) {
+            reject(Error(error))
+        }
+    })
+}
+
+function findUserDataByID(id) {
+    return new Promise(async (resolve, reject) => {
+        try {
+            var user = await users.findOne({ _id: id });
             resolve(user)
         } catch (error) {
             reject(Error(error))
