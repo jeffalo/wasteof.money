@@ -9,6 +9,7 @@ var bcrypt = require('bcrypt')
 const fs = require('fs')
 const path = require('path');
 const jdenticon = require("jdenticon");
+const { data } = require('autoprefixer');
 const port = process.env.LISTEN_PORT || 8080
 const app = express()
 
@@ -68,60 +69,63 @@ app.get('/', function (req, res) {
 })
 
 //docs
-app.get('/docs', async (req,res, next)=>{
-    var user = res.locals.requester
-    var loggedIn = res.locals.loggedIn
-
-    ejs.renderFile(__dirname + '/pages/index.ejs', { user, loggedIn }, (err, str) => {
-        if (err) console.log(err)
-        res.send(str)
-    })
-})
 
 app.get('/docs/:page', async (req,res, next)=>{
+    let docarray = []
     var user = res.locals.requester
     var loggedIn = res.locals.loggedIn
 
     var page = path.basename(req.params.page);
-
-    try {
-        var post = await fs.promises.readFile(`./docs/${page}.md`, 'utf-8')
-        const mattered = matter(post)
-
-        const html = marked(mattered.content);
-        var doc = {
-            meta: mattered.data,
-            body: html
+    const testFolder = './docs/';
+    fs.readdir(testFolder, async (err, files) => {
+        for (var i in files) {
+            var post = await fs.promises.readFile(`./docs/${files[i]}`, 'utf-8')
+            mattereddata = matter(post)
+            mattereddata.data.url = files[i].replace('.md', '')
+            docarray.push(mattereddata)
+        }
+        try {
+            
+            var post = await fs.promises.readFile(`./docs/${page}.md`, 'utf-8')
+            const mattered = matter(post)
+    
+            const html = marked(mattered.content);
+            var doc = {
+                meta: mattered.data,
+                body: html
+            }
+        
+            ejs.renderFile(__dirname + '/pages/docs.ejs', { user, loggedIn, doc, docarray }, (err, str) => {
+                if (err) console.log(err)
+                res.send(str)
+            })
+        }
+        catch (err){
+            if (err.code === 'ENOENT') {
+                next()
+              } else {
+                throw err;
+            }
         }
     
-        ejs.renderFile(__dirname + '/pages/docs.ejs', { user, loggedIn, doc }, (err, str) => {
-            if (err) console.log(err)
-            res.send(str)
-        })
-    }
-    catch (err){
-        if (err.code === 'ENOENT') {
-            next()
-          } else {
-            throw err;
+    })
+    
+    
+    app.get('/login', function (req, res) {
+        var user = res.locals.requester
+        var loggedIn = res.locals.loggedIn
+    
+        if (!loggedIn) {
+            ejs.renderFile(__dirname + '/pages/login.ejs', { user, loggedIn }, (err, str) => {
+                if (err) console.log(err)
+                res.send(str)
+            })
+        } else {
+            res.redirect('/')
         }
-    }
+    
+    });
 
-})
-
-
-app.get('/login', function (req, res) {
-    var user = res.locals.requester
-    var loggedIn = res.locals.loggedIn
-
-    if (!loggedIn) {
-        ejs.renderFile(__dirname + '/pages/login.ejs', { user, loggedIn }, (err, str) => {
-            if (err) console.log(err)
-            res.send(str)
-        })
-    } else {
-        res.redirect('/')
-    }
 
 })
 
