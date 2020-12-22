@@ -53,7 +53,15 @@ app.use(async (req, res, next) => {
     var user = findUser(userCookie)
     if (user) {
         res.locals.requester = await findUserDataByID(user.id)
-        res.locals.loggedIn = true
+        if(res.locals.requester){
+            res.locals.loggedIn = true
+        } else {
+            res.locals.loggedIn = false // the account was deleted but token remains
+            tokens = tokens.filter((obj) => { // clear that user from the tokens list (just keeping this cleaner)
+                return obj.token !== userCookie;
+            });
+            console.log(tokens)
+        }
     } else {
         res.locals.loggedIn = false
     }
