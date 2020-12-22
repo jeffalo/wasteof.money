@@ -5,15 +5,28 @@
 
 <body class='bg-gray-100'>
     <%- include('../partials/nav.ejs', {active: "docs", user, loggedIn}); %>
-
     <main class='container mx-auto px-4 mt-24 md:mt-16'>
+        
         <h1 class="font-bold text-2xl"><%= doc.meta.title %></h1>
-        <article class='markdown'>
-            <%- doc.body %>
-        </article>
+        <div class="md:flex flex-col md:flex-row md:min-h-screen w-full mt-4">
+            <div class="flex flex-col w-full md:w-64 text-gray-700 bg-white dark-mode:text-gray-200 dark-mode:bg-gray-800 flex-shrink-0 mr-5 border-t-2 border-indigo-600 rounded" >
+              <nav class="flex-grow md:block px-4 pb-4 md:pb-0 md:overflow-y-auto">
+                <% docarray.map((docarray)=>{ %>
+                    <a class="block px-4 py-2 mt-2 text-sm font-semibold text-gray-900 bg-transparent rounded-none dark-mode:bg-transparent dark-mode:hover:bg-gray-600 dark-mode:focus:bg-gray-600 dark-mode:focus:text-white dark-mode:hover:text-white dark-mode:text-gray-200 hover:text-gray-900 focus:text-gray-900 hover:bg-gray-200 focus:bg-gray-200 focus:outline-none focus:shadow-outline border-b border-gray-400" href="/docs/<%= docarray.data.url %>">
+                        <%= docarray.data.title %>
+                    </a>
+                  <% }) %>
+                
+                </div>
+              </nav>
+              <article class='markdown'>
+                <%- doc.body %>
+            </article>
+            </div>
+          </div>
+    
     </main>
 </body>
-
 <%- include('../partials/scripts.ejs'); %>
 <% if(doc.meta.code) { %>
     <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.4.1/build/styles/github.min.css">
