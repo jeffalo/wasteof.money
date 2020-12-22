@@ -79,20 +79,22 @@ app.get('/docs/:page', async (req, res, next) => {
     var loggedIn = res.locals.loggedIn
 
     var page = path.basename(req.params.page);
-    const testFolder = './docs/';
-    fs.readdir(testFolder, async (err, files) => {
+    fs.readdir('./docs/', async (err, files) => {
         for (var i in files) {
             var post = await fs.promises.readFile(`./docs/${files[i]}`, 'utf-8')
             mattereddata = matter(post)
             mattereddata.data.url = files[i].replace('.md', '')
+
             docarray.push(mattereddata)
         }
         try {
-
             var post = await fs.promises.readFile(`./docs/${page}.md`, 'utf-8')
             const mattered = matter(post)
 
             const html = marked(mattered.content);
+
+            mattered.data.url = page
+
             var doc = {
                 meta: mattered.data,
                 body: html
@@ -587,7 +589,7 @@ app.post('/users/:name/follow', async function (req, res) {
                 } else { //follow
                     try {
                         await users.update({ name: followUser.name }, { $push: { followers: user._id.toString() } })
-                        addMessage(followUser.name, `<a class='text-indigo-600' href='/users/${user.name}'>@${user.name}</a> is now following you.`)
+                        addMessage(followUser.name, `<a href='/users/${user.name}'>@${user.name}</a> is now following you.`)
                         res.json({ ok: 'now following', action: 'follow', new: followers.length + 1 })
                     }
                     catch (error) {

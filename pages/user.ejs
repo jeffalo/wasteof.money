@@ -14,7 +14,7 @@
     </div>
     <main class='container mx-auto px-4 mt-24 md:mt-16' id='app' v-cloak>
         <img src="/picture/<%= user.name %>" height="30px" class='rounded-full h-10 inline-block shadow'>
-        <h1 class="inline-block font-bold">@<%= user.name %></h1>
+        <h1 class="text-base">@<%= user.name %></h1>
         <% if(loggedInUser) { %>
         <button data-user='<%= user.name %>' id='follow'
             class="group relative inline-block py-2 px-4 border border-transparent text-sm leading-5 font-medium rounded-md text-white <%= user.followers.includes(loggedInUser._id.toString())? 'bg-gray-600 hover:bg-gray-500' : 'bg-indigo-600 hover:bg-indigo-500' %> transition duration-150 ease-in-out">
