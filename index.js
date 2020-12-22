@@ -85,7 +85,6 @@ app.get('/docs', async (req, res, next) => {
     var user = res.locals.requester
     var loggedIn = res.locals.loggedIn
 
-    var page = path.basename(req.params.page);
     fs.readdir('./docs/', async (err, files) => {
         for (var i in files) {
             var post = await fs.promises.readFile(`./docs/${files[i]}`, 'utf-8')
@@ -100,9 +99,9 @@ app.get('/docs', async (req, res, next) => {
             })
 
         }
-        }
+        
 
-    })
+    )
 
 })
 
