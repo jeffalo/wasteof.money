@@ -136,7 +136,8 @@
         var followres = await fetch(`/users/${user}/follow`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
             }
         })
         var followjson = await followres.json()
@@ -167,7 +168,8 @@
         var loveres = await fetch(`/posts/${id}/love`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
             }
         })
         var lovejson = await loveres.json()

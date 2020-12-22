@@ -58,7 +58,10 @@
             this.unread = data.unread.length
             this.last = data.last
             await fetch('/api/messages/read', {
-                method: "POST"
+                method: "POST",
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
             })
         },
         methods: {

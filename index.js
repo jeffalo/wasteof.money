@@ -72,7 +72,7 @@ app.get('/', function (req, res) {
 
 //docs
 
-app.get('/docs/:page', async (req,res, next)=>{
+app.get('/docs/:page', async (req, res, next) => {
     let docarray = []
 
     var user = res.locals.requester
@@ -88,47 +88,47 @@ app.get('/docs/:page', async (req,res, next)=>{
             docarray.push(mattereddata)
         }
         try {
-            
+
             var post = await fs.promises.readFile(`./docs/${page}.md`, 'utf-8')
             const mattered = matter(post)
-    
+
             const html = marked(mattered.content);
             var doc = {
                 meta: mattered.data,
                 body: html
             }
-        
+
             ejs.renderFile(__dirname + '/pages/docs.ejs', { user, loggedIn, doc, docarray }, (err, str) => {
                 if (err) console.log(err)
                 res.send(str)
             })
 
         }
-        catch (err){
+        catch (err) {
             if (err.code === 'ENOENT') {
                 next()
-              } else {
+            } else {
                 throw err;
             }
         }
-    
+
     })
-    
-})  
-    app.get('/login', function (req, res) {
-        var user = res.locals.requester
-        var loggedIn = res.locals.loggedIn
-    
-        if (!loggedIn) {
-            ejs.renderFile(__dirname + '/pages/login.ejs', { user, loggedIn }, (err, str) => {
-                if (err) console.log(err)
-                res.send(str)
-            })
-        } else {
-            res.redirect('/')
-        }
-    
-    });
+
+})
+app.get('/login', function (req, res) {
+    var user = res.locals.requester
+    var loggedIn = res.locals.loggedIn
+
+    if (!loggedIn) {
+        ejs.renderFile(__dirname + '/pages/login.ejs', { user, loggedIn }, (err, str) => {
+            if (err) console.log(err)
+            res.send(str)
+        })
+    } else {
+        res.redirect('/')
+    }
+
+});
 
 
 
@@ -167,75 +167,81 @@ app.get('/logout', function (req, res) {
 
 app.post('/login', async function (req, res) {
     var loggedIn = res.locals.loggedIn
+    if (req.is('application/json')) {
+        if (!loggedIn) {
+            var username = req.body.username.toLowerCase()
+            var password = req.body.password
+            const user = await findUserData(username)
 
-    if (!loggedIn) {
-        var username = req.body.username.toLowerCase()
-        var password = req.body.password
-        const user = await findUserData(username)
-
-        if (user) {
-            bcrypt.compare(password, user.password, function (err, result) {
-                if (result) {
-                    var token = makeID(20)
-                    tokens.push({ id: user._id, token: token })
-                    res.cookie('token', token)
-                    res.json({ ok: 'logged in successfully' })
-                } else {
-                    //password was incorrect
-                    res.json({ error: 'incorrect password' })
-                }
-            });
+            if (user) {
+                bcrypt.compare(password, user.password, function (err, result) {
+                    if (result) {
+                        var token = makeID(20)
+                        tokens.push({ id: user._id, token: token })
+                        res.cookie('token', token)
+                        res.json({ ok: 'logged in successfully' })
+                    } else {
+                        //password was incorrect
+                        res.json({ error: 'incorrect password' })
+                    }
+                });
+            } else {
+                res.json({ error: 'user not found' })
+            }
         } else {
-            res.json({ error: 'user not found' })
+            res.redirect('/')
         }
     } else {
-        res.redirect('/')
+        res.json({ error: 'must be json' })
     }
 })
 
 app.post('/join', async function (req, res) {
     var user = res.locals.requester
     var loggedIn = res.locals.loggedIn
-
-    if (!loggedIn) {
-        var username = req.body.username.toLowerCase()
-        var password = req.body.password
-        bcrypt.hash(password, saltRounds, async function (err, hashedPassword) {
-            if (err) {
-                res.json({ error: 'password hashing error' })
-            } else {
-                if (usernameRegex.test(username)) {//check if username matches criteria
-                    users.insert({
-                        name: username,
-                        password: hashedPassword,
-                        followers: [],
-                        messages: {
-                            unread: [],
-                            read: []
-                        },
-                    })
-                        .then(user => {
-                            console.log(user)
-                            var token = makeID(20)
-                            tokens.push({ id: user._id, token: token })
-                            res.cookie('token', token)
-                            res.json({ ok: 'made account successfully' })
+    if (req.is('application/json')) {
+        if (!loggedIn) {
+            var username = req.body.username.toLowerCase()
+            var password = req.body.password
+            bcrypt.hash(password, saltRounds, async function (err, hashedPassword) {
+                if (err) {
+                    res.json({ error: 'password hashing error' })
+                } else {
+                    if (usernameRegex.test(username)) {//check if username matches criteria
+                        users.insert({
+                            name: username,
+                            password: hashedPassword,
+                            followers: [],
+                            messages: {
+                                unread: [],
+                                read: []
+                            },
                         })
-                        .catch(err => {
-                            if (err.code == 11000) {
-                                res.json({ error: 'username already taken' })
-                            } else {
-                                console.log(err)
-                                res.json({ error: 'uncaught database error: ' + err.code })
-                            }
-                        })
-                } else {//username does not match criterai
-                    res.json({ error: `must match regex ${usernameRegex.toString()}` })
+                            .then(user => {
+                                console.log(user)
+                                var token = makeID(20)
+                                tokens.push({ id: user._id, token: token })
+                                res.cookie('token', token)
+                                res.json({ ok: 'made account successfully' })
+                            })
+                            .catch(err => {
+                                if (err.code == 11000) {
+                                    res.json({ error: 'username already taken' })
+                                } else {
+                                    console.log(err)
+                                    res.json({ error: 'uncaught database error: ' + err.code })
+                                }
+                            })
+                    } else {//username does not match criterai
+                        res.json({ error: `must match regex ${usernameRegex.toString()}` })
+                    }
                 }
-            }
-        });
+            });
+        } else {
+            res.redirect('/')
+        }
     } else {
-        res.redirect('/')
+        res.json({ error: 'must be json' })
     }
 })
 
@@ -245,7 +251,7 @@ app.post('/update-username', async (req, res) => {
     var user = res.locals.requester
     var loggedIn = res.locals.loggedIn
     var username = req.body.username
-    if (loggedIn && req.xhr) {
+    if (loggedIn && req.is('application/json')) {
         if (usernameRegex.test(username)) {
             try {
                 await users.update({ _id: user._id }, { $set: { name: username } })
@@ -359,19 +365,24 @@ app.get('/api/messages/count', async (req, res) => {
 app.post('/api/messages/read', async (req, res) => {
     var user = res.locals.requester
     var loggedIn = res.locals.loggedIn
-    if (loggedIn) {
-        var messages = user.messages
-        messages.read = messages.read.concat(messages.unread)
-        messages.unread = []
-        try {
-            await users.update({ name: user.name }, { $set: { messages } })
-            res.json({ ok: 'cleared messages' })
-        } catch (error) {
-            console.log(error)
-            res.json({ error: 'something went wrong' })
+
+    if (req.xhr) {
+        if (loggedIn) {
+            var messages = user.messages
+            messages.read = messages.read.concat(messages.unread)
+            messages.unread = []
+            try {
+                await users.update({ name: user.name }, { $set: { messages } })
+                res.json({ ok: 'cleared messages' })
+            } catch (error) {
+                console.log(error)
+                res.json({ error: 'something went wrong' })
+            }
+        } else {
+            res.json({ error: 'requires login' })
         }
     } else {
-        res.json({ error: 'requires login' })
+        res.json({ error: 'must be requested with xhr' })
     }
 })
 
@@ -487,101 +498,111 @@ app.get('/posts/:post', async function (req, res, next) {
 app.post('/post', async function (req, res) {
     var user = res.locals.requester
     var loggedIn = res.locals.loggedIn
-
-    if (loggedIn) {
-        posts.insert({ content: req.body.post, poster: user._id, time: Date.now(), loves: [] })
-            .then(post => {
-                res.json({ ok: 'made post', id: post._id })
-            })
-            .catch(err => {
-                res.json({ error: 'uncaught error' })
-                console.error(error)
-            })
+    if (req.is('application/json')) {
+        if (loggedIn) {
+            posts.insert({ content: req.body.post, poster: user._id, time: Date.now(), loves: [] })
+                .then(post => {
+                    res.json({ ok: 'made post', id: post._id })
+                })
+                .catch(err => {
+                    res.json({ error: 'uncaught error' })
+                    console.error(error)
+                })
+        } else {
+            res.json({ error: 'must be logged in' })
+        }
     } else {
-        res.json({ error: 'must be logged in' })
+        res.json({ error: 'must send json data' })
     }
 })
 
 app.post('/posts/:id/love', async function (req, res) {
     var user = res.locals.requester
     var loggedIn = res.locals.loggedIn
-
-    if (loggedIn) {
-        try {
-            posts.findOne({ _id: req.params.id })
-                .then(post => {
-                    if (post) {
-                        var loves = post.loves || []
-                        if (!loves.includes(user._id.toString())) {
-                            loves.push(user._id.toString())
-                            posts.update({ _id: req.params.id }, { $set: { loves: loves } })
-                                .then(() => {
-                                    res.json({ ok: 'loved post', new: loves, action: 'love' })
-                                })
-                                .catch(updateerr => {
-                                    console.log(updateerr)
-                                    res.json({ error: updateerr })
-                                })
+    if (req.xhr) {
+        if (loggedIn) {
+            try {
+                posts.findOne({ _id: req.params.id })
+                    .then(post => {
+                        if (post) {
+                            var loves = post.loves || []
+                            if (!loves.includes(user._id.toString())) {
+                                loves.push(user._id.toString())
+                                posts.update({ _id: req.params.id }, { $set: { loves: loves } })
+                                    .then(() => {
+                                        res.json({ ok: 'loved post', new: loves, action: 'love' })
+                                    })
+                                    .catch(updateerr => {
+                                        console.log(updateerr)
+                                        res.json({ error: updateerr })
+                                    })
+                            } else {
+                                loves = loves.filter(i => i !== user._id.toString())
+                                posts.update({ _id: req.params.id }, { $set: { loves: loves } })
+                                    .then(() => {
+                                        res.json({ ok: 'unloved', new: loves, action: 'unlove' })
+                                    })
+                                    .catch(updateerr => {
+                                        console.log(updateerr)
+                                        res.json({ error: updateerr })
+                                    })
+                            }
                         } else {
-                            loves = loves.filter(i => i !== user._id.toString())
-                            posts.update({ _id: req.params.id }, { $set: { loves: loves } })
-                                .then(() => {
-                                    res.json({ ok: 'unloved', new: loves, action: 'unlove' })
-                                })
-                                .catch(updateerr => {
-                                    console.log(updateerr)
-                                    res.json({ error: updateerr })
-                                })
+                            res.json({ eror: 'post not found' })
                         }
-                    } else {
-                        res.json({ eror: 'post not found' })
-                    }
-                })
-                .catch(err => {
-                    res.json({ error: err.code })
-                })
-        } catch (error) {
-            console.log(error)
-            res.json({ error: 'oops something went wrong' })
+                    })
+                    .catch(err => {
+                        res.json({ error: err.code })
+                    })
+            } catch (error) {
+                console.log(error)
+                res.json({ error: 'oops something went wrong' })
+            }
+        } else {
+            res.json({ error: 'needs to be logged in' })
         }
     } else {
-        res.json({ error: 'needs to be logged in' })
+        res.json({ error: 'must be requested with xhr' })
     }
 })
 
 app.post('/users/:name/follow', async function (req, res) {
     var user = res.locals.requester
     var loggedIn = res.locals.loggedIn
-    if (loggedIn) {
-        var followUser = await findUserData(req.params.name)
-        if (followUser) {
-            var followers = followUser.followers || []
-            if (followers.includes(user._id.toString())) { //already follower, unfollow
-                followers = followers.filter(i => i !== user._id.toString())
-                try {
-                    await users.update({ name: followUser.name }, { $set: { followers } })
-                    res.json({ ok: 'unfollowing', action: 'unfollow', new: followers.length })
+    if (req.xhr) {
+        if (loggedIn) {
+            var followUser = await findUserData(req.params.name)
+            if (followUser) {
+                var followers = followUser.followers || []
+                if (followers.includes(user._id.toString())) { //already follower, unfollow
+                    followers = followers.filter(i => i !== user._id.toString())
+                    try {
+                        await users.update({ name: followUser.name }, { $set: { followers } })
+                        res.json({ ok: 'unfollowing', action: 'unfollow', new: followers.length })
+                    }
+                    catch (error) {
+                        console.log(error)
+                        res.json({ error: 'database error' })
+                    }
+                } else { //follow
+                    try {
+                        await users.update({ name: followUser.name }, { $push: { followers: user._id.toString() } })
+                        addMessage(followUser.name, `<a class='text-indigo-600' href='/users/${user.name}'>@${user.name}</a> is now following you.`)
+                        res.json({ ok: 'now following', action: 'follow', new: followers.length + 1 })
+                    }
+                    catch (error) {
+                        console.log(error)
+                        res.json({ error: 'database error' })
+                    }
                 }
-                catch (error) {
-                    console.log(error)
-                    res.json({ error: 'database error' })
-                }
-            } else { //follow
-                try {
-                    await users.update({ name: followUser.name }, { $push: { followers: user._id.toString() } })
-                    addMessage(followUser.name, `<a class='text-indigo-600' href='/users/${user.name}'>@${user.name}</a> is now following you.`)
-                    res.json({ ok: 'now following', action: 'follow', new: followers.length + 1 })
-                }
-                catch (error) {
-                    console.log(error)
-                    res.json({ error: 'database error' })
-                }
+            } else {
+                res.json({ error: 'no user found' })
             }
         } else {
-            res.json({ error: 'no user found' })
+            res.json({ error: 'needs to be logged in' })
         }
     } else {
-        res.json({ error: 'needs to be logged in' })
+        res.json({ error: 'must be requested with xhr' })
     }
 })
 
