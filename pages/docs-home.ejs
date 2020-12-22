@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<%- include('../partials/head.ejs', {page: "docs"}); %>
+
+<body class='bg-gray-100'>
+    <%- include('../partials/nav.ejs', {active: "docs", user, loggedIn}); %>
+    <main class='container mx-auto px-4 mt-24 md:mt-16'>
+        
+        <h1>wasteof.money docs</h1>
+        <div class="md:flex flex-col md:flex-row md:min-h-screen w-full mt-4">
+            <div class="flex flex-col w-full md:w-64 text-gray-700 bg-white dark-mode:text-gray-200 dark-mode:bg-gray-800 flex-shrink-0 mr-5 border-t-2 border-indigo-600 rounded" >
+              <nav class="flex-grow md:block pb-4 md:pb-0 md:overflow-y-auto">
+                <% docarray.map((docarray)=>{ %>
+                    <a class="block px-8 py-4 text-sm font-semibold text-gray-900 rounded-none hover:text-gray-900 focus:text-gray-900 border-b border-gray-400 <%= doc.meta.url == docarray.data.url? 'bg-indigo-100' : 'bg-white' %>" href="/docs/<%= docarray.data.url %>">
+                        <%= docarray.data.title %>
+                    </a>
+                  <% }) %>
+                
+                </div>
+              </nav>
+            </div>
+          </div>
+    
+    </main>
+</body>
+<%- include('../partials/scripts.ejs'); %>
+<% if(doc.meta.code) { %>
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.4.1/build/styles/github.min.css">
+    <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.4.1/build/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+<% } %>
+</html>
