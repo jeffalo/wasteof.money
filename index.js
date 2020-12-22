@@ -189,20 +189,20 @@ app.post('/login', async function (req, res) {
                         var token = makeID(20)
                         tokens.push({ id: user._id, token: token })
                         res.cookie('token', token)
-                        res.json({ ok: 'logged in successfully' })
+                        res.json({ ok: 'Logged in successfully!' })
                     } else {
                         //password was incorrect
-                        res.json({ error: 'incorrect password' })
+                        res.status(401).json({ error: 'incorrect password' })
                     }
                 });
             } else {
-                res.json({ error: 'user not found' })
+                res.status(404).json({ error: 'user not found' }) // aparently this is bad practice https://github.com/OWASP/CheatSheetSeries/blob/master/cheatsheets/Authentication_Cheat_Sheet.md#authentication-and-error-messages
             }
         } else {
             res.redirect('/')
         }
     } else {
-        res.json({ error: 'must be json' })
+        res.status(415).json({ error: 'must send json data' })
     }
 })
 
@@ -215,7 +215,8 @@ app.post('/join', async function (req, res) {
             var password = req.body.password
             bcrypt.hash(password, saltRounds, async function (err, hashedPassword) {
                 if (err) {
-                    res.json({ error: 'password hashing error' })
+                    console.log(err)
+                    res.status(500).json({ error: 'password hashing error' })
                 } else {
                     if (usernameRegex.test(username)) {//check if username matches criteria
                         users.insert({
@@ -236,14 +237,14 @@ app.post('/join', async function (req, res) {
                             })
                             .catch(err => {
                                 if (err.code == 11000) {
-                                    res.json({ error: 'username already taken' })
+                                    res.status(409).json({ error: 'username already taken' })
                                 } else {
                                     console.log(err)
-                                    res.json({ error: 'uncaught database error: ' + err.code })
+                                    res.status(500).json({ error: 'uncaught database error: ' + err.code }) // todo: don't do this on prod.
                                 }
                             })
                     } else {//username does not match criterai
-                        res.json({ error: `must match regex ${usernameRegex.toString()}` })
+                        res.status(422).json({ error: `must match regex ${usernameRegex.toString()}` })
                     }
                 }
             });
@@ -251,7 +252,7 @@ app.post('/join', async function (req, res) {
             res.redirect('/')
         }
     } else {
-        res.json({ error: 'must be json' })
+        res.status(415).json({ error: 'must be json' })
     }
 })
 
@@ -272,17 +273,17 @@ app.post('/update-username', async (req, res) => {
                 res.json({ ok: username })
             } catch (err) {
                 if (err.code == 11000) {
-                    res.json({ error: 'username already taken' })
+                    res.status(409).json({ error: 'username already taken' })
                 } else {
                     console.log(err)
-                    res.json({ error: 'uncaught database error: ' + err.code })
+                    res.status(500).json({ error: 'uncaught database error: ' + err.code }) // todo: don't do this on prod.
                 }
             }
         } else {
-            res.json({ error: `must match regex ${usernameRegex.toString()}` })
+            res.status(422).json({ error: `must match regex ${usernameRegex.toString()}` })
         }
     } else {
-        res.json({ error: 'not logged in, or not made with xhr' })
+        res.status(403).json({ error: 'not logged in, or not made with xhr' }) // is this the right status?
     }
 })
 
@@ -291,9 +292,9 @@ app.post('/delete-account', async (req, res) => {
     var loggedIn = res.locals.loggedIn
 
     if (loggedIn && req.xhr && user) {
-        res.json({ error: 'sorry accountc ant be deletd yet' })
+        res.status(501).json({ error: 'account deletion is not implemented yet' })
     } else {
-        res.json({ error: 'not logged in, not requested with xhr or no user found' })
+        res.status(403).json({ error: 'not logged in, not requested with xhr or no user found' }) // seperate this thing up
     }
 })
 
@@ -357,7 +358,7 @@ app.get('/api/messages', async (req, res) => {
         })
         res.json(messages)
     } else {
-        res.json({ error: 'requires login' })
+        res.status(401).json({ error: 'requires login' })
     }
 })
 
@@ -368,7 +369,7 @@ app.get('/api/messages/count', async (req, res) => {
         var messages = user.messages
         res.json({ count: messages.unread.length })
     } else {
-        res.json({ error: 'requires login' })
+        res.status(401).json({ error: 'requires login' })
     }
 })
 
@@ -386,13 +387,13 @@ app.post('/api/messages/read', async (req, res) => {
                 res.json({ ok: 'cleared messages' })
             } catch (error) {
                 console.log(error)
-                res.json({ error: 'something went wrong' })
+                res.status(500).json({ error: 'uncaught server error' })
             }
         } else {
-            res.json({ error: 'requires login' })
+            res.status(401).json({ error: 'requires login' })
         }
     } else {
-        res.json({ error: 'must be requested with xhr' })
+        res.status(403).json({ error: 'must be requested with xhr' })
     }
 })
 
@@ -428,7 +429,7 @@ app.get('/api/users/:user', async (req, res) => {
             followers: user.followers.length
         })
     } else {
-        res.json({ error: 'no user found' })
+        res.status(404).json({ error: 'no user found' })
     }
 })
 
@@ -450,7 +451,7 @@ app.get('/api/users/:user/posts', async (req, res) => {
         if (paginate(userPosts, 15, page + 1).length == 0) last = true //set last to true if this is the last page
         res.json({ posts: pagePosts, last })
     } else {
-        res.json({ error: 'no user found' })
+        res.status(404).json({ error: 'no user found' })
     }
 })
 
@@ -491,7 +492,7 @@ app.get('/api/posts/:post', async function (req, res) {
         post.poster = poster.name
         res.json(post)
     } catch {
-        res.json({ error: 'no post found' })
+        res.status(404).json({ error: 'no post found' })
     }
 })
 
@@ -515,14 +516,14 @@ app.post('/post', async function (req, res) {
                     res.json({ ok: 'made post', id: post._id })
                 })
                 .catch(err => {
-                    res.json({ error: 'uncaught error' })
+                    res.status(500).json({ error: 'uncaught server error' })
                     console.error(error)
                 })
         } else {
-            res.json({ error: 'must be logged in' })
+            res.status(401).json({ error: 'must be logged in' })
         }
     } else {
-        res.json({ error: 'must send json data' })
+        res.status(415).json({ error: 'must send json data' })
     }
 })
 
@@ -544,7 +545,7 @@ app.post('/posts/:id/love', async function (req, res) {
                                     })
                                     .catch(updateerr => {
                                         console.log(updateerr)
-                                        res.json({ error: updateerr })
+                                        res.status(500).json({ error: 'uncaught database error: ' + updateerr.code }) // todo: don't do this on prod.
                                     })
                             } else {
                                 loves = loves.filter(i => i !== user._id.toString())
@@ -554,7 +555,7 @@ app.post('/posts/:id/love', async function (req, res) {
                                     })
                                     .catch(updateerr => {
                                         console.log(updateerr)
-                                        res.json({ error: updateerr })
+                                        res.status(500).json({ error: 'uncaught database error: ' + updateerr.code }) // todo: don't do this on prod.
                                     })
                             }
                         } else {
@@ -562,17 +563,17 @@ app.post('/posts/:id/love', async function (req, res) {
                         }
                     })
                     .catch(err => {
-                        res.json({ error: err.code })
+                        res.status(500).json({ error: 'uncaught database error: ' + err.code }) // todo: don't do this on prod.
                     })
             } catch (error) {
                 console.log(error)
-                res.json({ error: 'oops something went wrong' })
+                res.status(500).json({ error: 'oops something went wrong' })
             }
         } else {
-            res.json({ error: 'needs to be logged in' })
+            res.status(401).json({ error: 'needs to be logged in' })
         }
     } else {
-        res.json({ error: 'must be requested with xhr' })
+        res.status(403).json({ error: 'must be requested with xhr' })
     }
 })
 
@@ -592,7 +593,7 @@ app.post('/users/:name/follow', async function (req, res) {
                     }
                     catch (error) {
                         console.log(error)
-                        res.json({ error: 'database error' })
+                        res.status(500).json({ error: 'uncaught database error: ' + error.code }) // todo: don't do this on prod.
                     }
                 } else { //follow
                     try {
@@ -602,17 +603,17 @@ app.post('/users/:name/follow', async function (req, res) {
                     }
                     catch (error) {
                         console.log(error)
-                        res.json({ error: 'database error' })
+                        res.status(500).json({ error: 'uncaught database error: ' + error.code }) // todo: don't do this on prod.
                     }
                 }
             } else {
-                res.json({ error: 'no user found' })
+                res.status(404).json({ error: 'no user found' })
             }
         } else {
-            res.json({ error: 'needs to be logged in' })
+            res.status(401).json({ error: 'needs to be logged in' })
         }
     } else {
-        res.json({ error: 'must be requested with xhr' })
+        res.status(403).json({ error: 'must be requested with xhr' })
     }
 })
 
