@@ -28,7 +28,7 @@ var saltRounds = 10
 
 var tokens = []
 
-const usernameRegex = /^[a-z0-9_\-.]{1,20}$/
+const usernameRegex = /^[a-z0-9_\-]{1,20}$/
 
 app.use(express.static('static', {
     extensions: ['html', 'htm']
