@@ -79,6 +79,31 @@ app.get('/', function (req, res) {
 })
 
 //docs
+app.get('/docs', async (req, res, next) => {
+    let docarray = []
+
+    var user = res.locals.requester
+    var loggedIn = res.locals.loggedIn
+
+    fs.readdir('./docs/', async (err, files) => {
+        for (var i in files) {
+            var post = await fs.promises.readFile(`./docs/${files[i]}`, 'utf-8')
+            mattereddata = matter(post)
+            mattereddata.data.url = files[i].replace('.md', '')
+
+            docarray.push(mattereddata)
+        }
+            ejs.renderFile(__dirname + '/pages/docs-home.ejs', { user, loggedIn, docarray }, (err, str) => {
+                if (err) console.log(err)
+                res.send(str)
+            })
+
+        }
+        
+
+    )
+
+})
 
 app.get('/docs/:page', async (req, res, next) => {
     let docarray = []
