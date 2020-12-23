@@ -199,7 +199,7 @@ app.post('/login', async function (req, res) {
             if (user) {
                 bcrypt.compare(password, user.password, function (err, result) {
                     if (result) {
-                        var token = makeID(20)
+                        var token = makeToken(32)
                         addToken(token, user._id)
                         res.cookie('token', token)
                         res.json({ ok: 'Logged in successfully!' })
@@ -243,7 +243,7 @@ app.post('/join', async function (req, res) {
                         })
                             .then(user => {
                                 console.log(user)
-                                var token = makeID(20)
+                                var token = makeToken(32)
                                 addToken(token, user._id)
                                 res.cookie('token', token)
                                 res.json({ ok: 'made account successfully' })
@@ -683,6 +683,18 @@ function addMessage(name, text, time = Date.now()) {
     })
 }
 
+function makeToken(length) { // make login tokens used by the join and login systems
+    const set = 'abcdefghijklmnopABCDEFGHIJKLMNOP0123456789';
+    var res = [...function*(){for (let i=0; i<length; i++)yield set[Math.floor(Math.random() * set.length)]}()].join(''); // what the heck is this alien language
+
+    if (tokens.some(e => e.token === res)) { // handle the really rare chance that a token already exists
+        console.log('the impossible has happend')
+        return makeToken(length)
+    } else {
+        return res
+    }
+}
+
 function addToken(token, id, time = 21600000) { // 6 hours
     tokens.push({ id: id, token: token })
 
@@ -696,16 +708,6 @@ function removeToken(token) {
         return obj.token !== token;
     });
     // console.log(tokens)
-}
-
-function makeID(length) { // make login tokens used by the join and login systems
-    var result = '';
-    var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    var charactersLength = characters.length;
-    for (var i = 0; i < length; i++) {
-        result += characters.charAt(Math.floor(Math.random() * charactersLength));
-    }
-    return result;
 }
 
 function paginate(array, page_size, page_number) {
