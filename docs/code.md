@@ -2,6 +2,7 @@
 title: Code
 description: Example code!!
 code: true
+author: jeffalo
 ---
 ## js with comments 😲
 ```js

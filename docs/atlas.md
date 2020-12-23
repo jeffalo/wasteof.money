@@ -2,8 +2,10 @@
 title: Setting up a cloud development database
 description: Instructions on how to setup a cloud database for development.
 code: true
+author: GrahamSH
 ---
-These instructions may look hard, but they're actually pretty easy! GrahamSH completed them on a Chromebook, with no problems. Just follow the instructions!
+Sometimes when you're developing it might not be possible to run a database locally. These steps should help with getting a cloud database from Mongo Atlas and get it configured in your .env file. This is meant for development, it is not recommended for production.
+
 ### Account
 - First, make an account at https://www.mongodb.com/cloud/atlas/register. Fill out the fields, or sign in with Google.
 - When it prompts you to pick a provider, pick any option

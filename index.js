@@ -80,29 +80,7 @@ app.get('/', function (req, res) {
 
 //docs
 app.get('/docs', async (req, res, next) => {
-    let docarray = []
-
-    var user = res.locals.requester
-    var loggedIn = res.locals.loggedIn
-
-    fs.readdir('./docs/', async (err, files) => {
-        for (var i in files) {
-            var post = await fs.promises.readFile(`./docs/${files[i]}`, 'utf-8')
-            mattereddata = matter(post)
-            mattereddata.data.url = files[i].replace('.md', '')
-
-            docarray.push(mattereddata)
-        }
-            ejs.renderFile(__dirname + '/pages/docs-home.ejs', { user, loggedIn, docarray }, (err, str) => {
-                if (err) console.log(err)
-                res.send(str)
-            })
-
-        }
-        
-
-    )
-
+    res.redirect('/docs/home') // redirect docs homepage TODO: https://stackoverflow.com/a/63986681
 })
 
 app.get('/docs/:page', async (req, res, next) => {
@@ -120,6 +98,20 @@ app.get('/docs/:page', async (req, res, next) => {
 
             docarray.push(mattereddata)
         }
+        //sort docarray real quick
+        docarray.sort(function(a, b){
+            if(a.data.title < b.data.title) { return -1; }
+            if(a.data.title > b.data.title) { return 1; }
+            return 0;
+        })
+
+        docarray.forEach((doc, i)=>{ // move home to the top
+            if (doc.data.title === 'Home') {
+                docarray.splice(i, 1); // remove it
+                docarray.unshift(doc); // add it back to the start
+            }
+        })
+
         try {
             var post = await fs.promises.readFile(`./docs/${page}.md`, 'utf-8')
             const mattered = matter(post)
