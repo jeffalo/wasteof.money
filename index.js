@@ -53,13 +53,11 @@ app.use(async (req, res, next) => {
     var user = findUser(userCookie)
     if (user) {
         res.locals.requester = await findUserDataByID(user.id)
-        if(res.locals.requester){
+        if (res.locals.requester) {
             res.locals.loggedIn = true
         } else {
             res.locals.loggedIn = false // the account was deleted but token remains
-            tokens = tokens.filter((obj) => { // clear that user from the tokens list (just keeping this cleaner)
-                return obj.token !== userCookie;
-            });
+            removeToken(userCookie)
             console.log(tokens)
         }
     } else {
@@ -99,13 +97,13 @@ app.get('/docs/:page', async (req, res, next) => {
             docarray.push(mattereddata)
         }
         //sort docarray real quick
-        docarray.sort(function(a, b){
-            if(a.data.title < b.data.title) { return -1; }
-            if(a.data.title > b.data.title) { return 1; }
+        docarray.sort(function (a, b) {
+            if (a.data.title < b.data.title) { return -1; }
+            if (a.data.title > b.data.title) { return 1; }
             return 0;
         })
 
-        docarray.forEach((doc, i)=>{ // move home to the top
+        docarray.forEach((doc, i) => { // move home to the top
             if (doc.data.title === 'Home') {
                 docarray.splice(i, 1); // remove it
                 docarray.unshift(doc); // add it back to the start
@@ -181,9 +179,7 @@ app.get('/logout', function (req, res) {
     var loggedIn = res.locals.loggedIn
 
     if (loggedIn) {
-        tokens = tokens.filter((obj) => {
-            return obj.token !== userCookie;
-        });
+        removeToken(userCookie)
         res.cookie('token', '')
         res.redirect('/')
     } else {
@@ -204,7 +200,7 @@ app.post('/login', async function (req, res) {
                 bcrypt.compare(password, user.password, function (err, result) {
                     if (result) {
                         var token = makeID(20)
-                        tokens.push({ id: user._id, token: token })
+                        addToken(token, user._id)
                         res.cookie('token', token)
                         res.json({ ok: 'Logged in successfully!' })
                     } else {
@@ -248,7 +244,7 @@ app.post('/join', async function (req, res) {
                             .then(user => {
                                 console.log(user)
                                 var token = makeID(20)
-                                tokens.push({ id: user._id, token: token })
+                                addToken(token, user._id)
                                 res.cookie('token', token)
                                 res.json({ ok: 'made account successfully' })
                             })
@@ -283,9 +279,7 @@ app.post('/update-username', async (req, res) => {
         if (usernameRegex.test(username)) {
             try {
                 await users.update({ _id: user._id }, { $set: { name: username } })
-                tokens = tokens.filter((obj) => {
-                    return obj.token !== userCookie;
-                });
+                removeToken(userCookie)
                 res.cookie('token', '')
                 res.json({ ok: username })
             } catch (err) {
@@ -689,7 +683,22 @@ function addMessage(name, text, time = Date.now()) {
     })
 }
 
-function makeID(length) {
+function addToken(token, id, time = 21600000) { // 6 hours
+    tokens.push({ id: id, token: token })
+
+    setTimeout(() => { // remove token after time seconds
+        removeToken(token)
+    }, time)
+}
+
+function removeToken(token) {
+    tokens = tokens.filter((obj) => {
+        return obj.token !== token;
+    });
+    // console.log(tokens)
+}
+
+function makeID(length) { // make login tokens used by the join and login systems
     var result = '';
     var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     var charactersLength = characters.length;
