@@ -20,3 +20,10 @@ public class Hello1
    }
 }
 ```
+## html with javascript 🤯
+```html
+<button>i am button</button>
+<script>
+   console.log('epic')
+</script>
+```

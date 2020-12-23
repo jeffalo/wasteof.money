@@ -1,6 +1,7 @@
 ---
 title: Home
 description: Docs homepage
+icon: home-alt
 code: true
 ---
 Welcome to the wasteof.money docs, here you can information about our service, API documentation and how to help develop.

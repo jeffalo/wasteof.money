@@ -13,16 +13,17 @@
               <nav class="flex-grow md:block pb-4 md:pb-0 md:overflow-y-auto">
                 <% docarray.map((docarray)=>{ %>
                     <a class="block px-8 py-4 text-sm font-semibold text-gray-900 rounded-none hover:text-gray-900 focus:text-gray-900 border-b border-gray-400 <%= doc.meta.url == docarray.data.url? 'bg-indigo-100' : 'bg-white hover:bg-gray-100 transition duration-200' %>" href="/docs/<%= docarray.data.url %>">
-                        <%= docarray.data.title %>
+                      <%- docarray.data.icon? `<span class="iconify inline" data-icon="uil:${docarray.data.icon}" ></span>` : '' %>  
+                      <%- docarray.data.title %>
                     </a>
                   <% }) %>
                 
                 </div>
               </nav>
               <article class='markdown'>
-                <h1><%= doc.meta.title %></h1>
+                <h1><%- doc.meta.title %></h1>
                 <% if(doc.meta.author) { %>
-                <span class='block italic text-gray-600'>author: <%= doc.meta.author %></span>
+                <span class='block italic text-gray-600'>author: <a href="/users/<%= doc.meta.author %>">@<%= doc.meta.author %></a></span>
                 <% } %>
                 <%- doc.body %>
                 <a class='block text-sm' href="https://github.com/jeffalo/wasteof.money/blob/master/docs/<%= doc.meta.url %>.md">view on github</a>
