@@ -314,13 +314,12 @@ app.post(
   }
 );
 
-app.post("/update-username", async (req, res) => {
+app.post("/update-username", checkLoggedIn((req, res) => res.status("401").json({ error: "requires login" })), async (req, res) => {
   var userCookie = req.cookies.token,
-    loggedIn = res.locals.loggedIn,
     user = res.locals.user,
     username = req.body.username;
 
-  if (loggedIn && req.is("application/json")) {
+  if (req.is("application/json")) {
     if (usernameRegex.test(username)) {
       try {
         await users.update({ _id: user._id }, { $set: { name: username } });
@@ -343,19 +342,18 @@ app.post("/update-username", async (req, res) => {
         .json({ error: `must match regex ${usernameRegex.toString()}` });
     }
   } else {
-    res.status(403).json({ error: "not logged in, or not made with xhr" }); // is this the right status?
+    res.status(403).json({ error: "not made with xhr" }); // is this the right status?
   }
 });
 
-app.post("/delete-account", async (req, res) => {
-  var user = res.locals.requester,
-    loggedIn = res.locals.loggedIn;
+app.post("/delete-account", checkLoggedIn((req, res) => res.status("401").json({ error: "requires login" })), async (req, res) => {
+  var user = res.locals.user;
 
-  if (loggedIn && req.xhr && user) {
+  if (req.xhr && user) {
     res.status(501).json({ error: "account deletion is not implemented yet" });
   } else {
     res.status(403).json({
-      error: "not logged in, not requested with xhr or no user found"
+      error: "not requested with xhr or no user found"
     }); // seperate this thing up
   }
 });
