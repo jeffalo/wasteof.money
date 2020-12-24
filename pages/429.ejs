@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<%- include('../partials/head.ejs', {page: "404"}); %>
+
+<body class='bg-gray-100'>
+    <%- include('../partials/nav.ejs', {active: "429", user, loggedIn}); %>
+
+    <main class='container mx-auto px-4 mt-24 md:mt-16'>
+        <h1>429</h1>
+        <p><%if (message) {%>
+      <%=message%>
+      <%} else {%>
+      Too many requests.
+      <%}%></p>
+    </main>
+</body>
+
+<%- include('../partials/scripts.ejs'); %>
+
+</html>
