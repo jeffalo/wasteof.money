@@ -80,15 +80,30 @@ app.use(
 );
 
 function checkLoggedIn(cb) {
+  const callback =
+    cb ||
+    function(req, res) {
+      if (req.method === "GET") res.redirect("/");
+      else res.status(401).json({ error: "requires login" });
+    };
   return function(req, res, next) {
-    if (!res.locals.loggedIn) cb(req, res, next);
+    if (!res.locals.loggedIn) callback(req, res, next);
     else next();
   };
 }
 
 function checkLoggedOut(cb) {
+  const callback =
+    cb ||
+    function(req, res) {
+      if (req.method === "GET") res.redirect("/");
+      else
+        res
+          .status(412)
+          .json({ error: "can't complete this action while logged in" });
+    };
   return function(req, res, next) {
-    if (res.locals.loggedIn) cb(req, res, next);
+    if (res.locals.loggedIn) callback(req, res, next);
     else next();
   };
 }
@@ -177,10 +192,7 @@ app.get("/docs/:page", async (req, res, next) => {
   });
 });
 
-app.get("/login", checkLoggedOut((req, res) => res.redirect("/")), function(
-  req,
-  res
-) {
+app.get("/login", checkLoggedOut(), function(req, res) {
   ejs.renderFile(
     __dirname + "/pages/login.ejs",
     { user: null, loggedIn: false }, // we know they're logged out because of the checkLoggedOut middleware
@@ -191,10 +203,7 @@ app.get("/login", checkLoggedOut((req, res) => res.redirect("/")), function(
   );
 });
 
-app.get("/join", checkLoggedOut((req, res) => res.redirect("/")), function(
-  req,
-  res
-) {
+app.get("/join", checkLoggedOut(), function(req, res) {
   ejs.renderFile(
     __dirname + "/pages/join.ejs",
     { user: null, loggedIn: false }, // ditto
@@ -205,10 +214,7 @@ app.get("/join", checkLoggedOut((req, res) => res.redirect("/")), function(
   );
 });
 
-app.get("/logout", checkLoggedIn((req, res) => res.redirect("/")), function(
-  req,
-  res
-) {
+app.get("/logout", checkLoggedIn(), function(req, res) {
   var userCookie = req.cookies.token;
   removeToken(userCookie);
   res.cookie("token", "");
@@ -314,7 +320,7 @@ app.post(
   }
 );
 
-app.post("/update-username", checkLoggedIn((req, res) => res.status("401").json({ error: "requires login" })), async (req, res) => {
+app.post("/update-username", checkLoggedIn(), async (req, res) => {
   var userCookie = req.cookies.token,
     user = res.locals.user,
     username = req.body.username;
@@ -346,7 +352,7 @@ app.post("/update-username", checkLoggedIn((req, res) => res.status("401").json(
   }
 });
 
-app.post("/delete-account", checkLoggedIn((req, res) => res.status("401").json({ error: "requires login" })), async (req, res) => {
+app.post("/delete-account", checkLoggedIn(), async (req, res) => {
   var user = res.locals.user;
 
   if (req.xhr && user) {
@@ -384,89 +390,67 @@ app.get("/explore", async function(req, res) {
     );
   }
 });
-app.get(
-  "/settings",
-  checkLoggedIn((req, res) => res.redirect("/")),
-  async function(req, res) {
-    var user = res.locals.requester,
-      loggedIn = res.locals.loggedIn;
-    // logged in settings page
-    ejs.renderFile(
-      __dirname + "/pages/settings.ejs",
-      { user, loggedIn },
-      (err, str) => {
-        if (err) console.log(err);
-        res.send(str);
-      }
-    );
-  }
-);
-
-app.get(
-  "/api/messages",
-  checkLoggedIn((req, res) =>
-    res.status(401).json({ error: "requires login" })
-  ),
-  async (req, res) => {
-    var user = res.locals.requester,
-      page = parseInt(req.query.page) || 1;
-
-    var unread = user.messages.unread, // don't paginate unread messages?
-      read = paginate(user.messages.read, 15, page),
-      last = false;
-    if (paginate(user.messages.read, 15, page + 1).length == 0) last = true; //set last to true if this is the last page
-    console.log(read);
-    var messages = {
-      unread,
-      read,
-      last
-    };
-    messages.unread = messages.unread.sort(function(x, y) {
-      return y.time - x.time;
-    });
-    messages.read = messages.read.sort(function(x, y) {
-      return y.time - x.time;
-    });
-    res.json(messages);
-  }
-);
-
-app.get(
-  "/api/messages/count",
-  checkLoggedIn((req, res) =>
-    res.status(401).json({ error: "requires login" })
-  ),
-  async (req, res) => {
-    var user = res.locals.requester,
-      messages = user.messages;
-    res.json({ count: messages.unread.length });
-  }
-);
-
-app.post(
-  "/api/messages/read",
-  checkLoggedIn((req, res) =>
-    res.status(401).json({ error: "requires login" })
-  ),
-  async (req, res) => {
-    var user = res.locals.requester;
-
-    if (req.xhr) {
-      var messages = user.messages;
-      messages.read = messages.read.concat(messages.unread);
-      messages.unread = [];
-      try {
-        await users.update({ name: user.name }, { $set: { messages } });
-        res.json({ ok: "cleared messages" });
-      } catch (error) {
-        console.log(error);
-        res.status(500).json({ error: "uncaught server error" });
-      }
-    } else {
-      res.status(403).json({ error: "must be requested with xhr" });
+app.get("/settings", checkLoggedIn(), async function(req, res) {
+  var user = res.locals.requester,
+    loggedIn = res.locals.loggedIn;
+  // logged in settings page
+  ejs.renderFile(
+    __dirname + "/pages/settings.ejs",
+    { user, loggedIn },
+    (err, str) => {
+      if (err) console.log(err);
+      res.send(str);
     }
+  );
+});
+
+app.get("/api/messages", checkLoggedIn(), async (req, res) => {
+  var user = res.locals.requester,
+    page = parseInt(req.query.page) || 1;
+
+  var unread = user.messages.unread, // don't paginate unread messages?
+    read = paginate(user.messages.read, 15, page),
+    last = false;
+  if (paginate(user.messages.read, 15, page + 1).length == 0) last = true; //set last to true if this is the last page
+  console.log(read);
+  var messages = {
+    unread,
+    read,
+    last
+  };
+  messages.unread = messages.unread.sort(function(x, y) {
+    return y.time - x.time;
+  });
+  messages.read = messages.read.sort(function(x, y) {
+    return y.time - x.time;
+  });
+  res.json(messages);
+});
+
+app.get("/api/messages/count", checkLoggedIn(), async (req, res) => {
+  var user = res.locals.requester,
+    messages = user.messages;
+  res.json({ count: messages.unread.length });
+});
+
+app.post("/api/messages/read", checkLoggedIn(), async (req, res) => {
+  var user = res.locals.requester;
+
+  if (req.xhr) {
+    var messages = user.messages;
+    messages.read = messages.read.concat(messages.unread);
+    messages.unread = [];
+    try {
+      await users.update({ name: user.name }, { $set: { messages } });
+      res.json({ ok: "cleared messages" });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ error: "uncaught server error" });
+    }
+  } else {
+    res.status(403).json({ error: "must be requested with xhr" });
   }
-);
+});
 
 app.get(
   "/messages",
@@ -587,156 +571,138 @@ app.get("/posts/:post", async function(req, res, next) {
   }
 });
 
-app.post(
-  "/post",
-  checkLoggedIn((req, res) =>
-    res.status(401).json({ error: "requires login" })
-  ),
-  async function(req, res) {
-    var user = res.locals.requester;
+app.post("/post", checkLoggedIn(), async function(req, res) {
+  var user = res.locals.requester;
 
-    if (req.is("application/json")) {
+  if (req.is("application/json")) {
+    posts
+      .insert({
+        content: req.body.post,
+        poster: user._id,
+        time: Date.now(),
+        loves: []
+      })
+      .then(post => {
+        res.json({ ok: "made post", id: post._id });
+      })
+      .catch(err => {
+        res.status(500).json({ error: "uncaught server error" });
+        console.error(err);
+      });
+  } else {
+    res.status(415).json({ error: "must send json data" });
+  }
+});
+
+app.post("/posts/:id/love", checkLoggedIn(), async function(req, res) {
+  var user = res.locals.requester;
+  if (req.xhr) {
+    try {
       posts
-        .insert({
-          content: req.body.post,
-          poster: user._id,
-          time: Date.now(),
-          loves: []
-        })
+        .findOne({ _id: req.params.id })
         .then(post => {
-          res.json({ ok: "made post", id: post._id });
+          if (post) {
+            var loves = post.loves || [];
+            if (!loves.includes(user._id.toString())) {
+              loves.push(user._id.toString());
+              posts
+                .update({ _id: req.params.id }, { $set: { loves: loves } })
+                .then(() => {
+                  res.json({ ok: "loved post", new: loves, action: "love" });
+                })
+                .catch(updateerr => {
+                  console.log(updateerr);
+                  res.status(500).json({
+                    error: "uncaught database error: " + updateerr.code
+                  }); // todo: don't do this on prod.
+                });
+            } else {
+              loves = loves.filter(i => i !== user._id.toString());
+              posts
+                .update({ _id: req.params.id }, { $set: { loves: loves } })
+                .then(() => {
+                  res.json({ ok: "unloved", new: loves, action: "unlove" });
+                })
+                .catch(updateerr => {
+                  console.log(updateerr);
+                  res.status(500).json({
+                    error: "uncaught database error: " + updateerr.code
+                  }); // todo: don't do this on prod.
+                });
+            }
+          } else {
+            res.json({ eror: "post not found" });
+          }
         })
         .catch(err => {
-          res.status(500).json({ error: "uncaught server error" });
-          console.error(err);
+          res
+            .status(500)
+            .json({ error: "uncaught database error: " + err.code }); // todo: don't do this on prod.
         });
-    } else {
-      res.status(415).json({ error: "must send json data" });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ error: "oops something went wrong" });
     }
+  } else {
+    res.status(403).json({ error: "must be requested with xhr" });
   }
-);
+});
 
-app.post(
-  "/posts/:id/love",
-  checkLoggedIn((req, res) =>
-    res.status(401).json({ error: "requires login" })
-  ),
-  async function(req, res) {
-    var user = res.locals.requester;
-    if (req.xhr) {
-      try {
-        posts
-          .findOne({ _id: req.params.id })
-          .then(post => {
-            if (post) {
-              var loves = post.loves || [];
-              if (!loves.includes(user._id.toString())) {
-                loves.push(user._id.toString());
-                posts
-                  .update({ _id: req.params.id }, { $set: { loves: loves } })
-                  .then(() => {
-                    res.json({ ok: "loved post", new: loves, action: "love" });
-                  })
-                  .catch(updateerr => {
-                    console.log(updateerr);
-                    res.status(500).json({
-                      error: "uncaught database error: " + updateerr.code
-                    }); // todo: don't do this on prod.
-                  });
-              } else {
-                loves = loves.filter(i => i !== user._id.toString());
-                posts
-                  .update({ _id: req.params.id }, { $set: { loves: loves } })
-                  .then(() => {
-                    res.json({ ok: "unloved", new: loves, action: "unlove" });
-                  })
-                  .catch(updateerr => {
-                    console.log(updateerr);
-                    res.status(500).json({
-                      error: "uncaught database error: " + updateerr.code
-                    }); // todo: don't do this on prod.
-                  });
-              }
-            } else {
-              res.json({ eror: "post not found" });
-            }
-          })
-          .catch(err => {
-            res
-              .status(500)
-              .json({ error: "uncaught database error: " + err.code }); // todo: don't do this on prod.
+app.post("/users/:name/follow", checkLoggedIn(), async function(req, res) {
+  var user = res.locals.requester;
+  if (req.xhr) {
+    var followUser = await findUserData(req.params.name);
+    if (followUser) {
+      var followers = followUser.followers || [];
+      if (followers.includes(user._id.toString())) {
+        //already follower, unfollow
+        followers = followers.filter(i => i !== user._id.toString());
+        try {
+          await users.update(
+            { name: followUser.name },
+            { $set: { followers } }
+          );
+          res.json({
+            ok: "unfollowing",
+            action: "unfollow",
+            new: followers.length
           });
-      } catch (error) {
-        console.log(error);
-        res.status(500).json({ error: "oops something went wrong" });
-      }
-    } else {
-      res.status(403).json({ error: "must be requested with xhr" });
-    }
-  }
-);
-
-app.post(
-  "/users/:name/follow",
-  checkLoggedIn((req, res) =>
-    res.status(401).json({ error: "requires login" })
-  ),
-  async function(req, res) {
-    var user = res.locals.requester;
-    if (req.xhr) {
-      var followUser = await findUserData(req.params.name);
-      if (followUser) {
-        var followers = followUser.followers || [];
-        if (followers.includes(user._id.toString())) {
-          //already follower, unfollow
-          followers = followers.filter(i => i !== user._id.toString());
-          try {
-            await users.update(
-              { name: followUser.name },
-              { $set: { followers } }
-            );
-            res.json({
-              ok: "unfollowing",
-              action: "unfollow",
-              new: followers.length
-            });
-          } catch (error) {
-            console.log(error);
-            res
-              .status(500)
-              .json({ error: "uncaught database error: " + error.code }); // todo: don't do this on prod.
-          }
-        } else {
-          //follow
-          try {
-            await users.update(
-              { name: followUser.name },
-              { $push: { followers: user._id.toString() } }
-            );
-            addMessage(
-              followUser.name,
-              `<a href='/users/${user.name}'>@${user.name}</a> is now following you.`
-            );
-            res.json({
-              ok: "now following",
-              action: "follow",
-              new: followers.length + 1
-            });
-          } catch (error) {
-            console.log(error);
-            res
-              .status(500)
-              .json({ error: "uncaught database error: " + error.code }); // todo: don't do this on prod.
-          }
+        } catch (error) {
+          console.log(error);
+          res
+            .status(500)
+            .json({ error: "uncaught database error: " + error.code }); // todo: don't do this on prod.
         }
       } else {
-        res.status(404).json({ error: "no user found" });
+        //follow
+        try {
+          await users.update(
+            { name: followUser.name },
+            { $push: { followers: user._id.toString() } }
+          );
+          addMessage(
+            followUser.name,
+            `<a href='/users/${user.name}'>@${user.name}</a> is now following you.`
+          );
+          res.json({
+            ok: "now following",
+            action: "follow",
+            new: followers.length + 1
+          });
+        } catch (error) {
+          console.log(error);
+          res
+            .status(500)
+            .json({ error: "uncaught database error: " + error.code }); // todo: don't do this on prod.
+        }
       }
     } else {
-      res.status(403).json({ error: "must be requested with xhr" });
+      res.status(404).json({ error: "no user found" });
     }
+  } else {
+    res.status(403).json({ error: "must be requested with xhr" });
   }
-);
+});
 
 app.use((req, res, next) => {
   // 404 page always last
