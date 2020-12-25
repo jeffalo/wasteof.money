@@ -19,12 +19,33 @@ h1 {
 	padding-bottom: 0.125rem;
 }
 
+.markdown {
+	@apply text-gray-900 leading-normal break-words;
+}
 
+.markdown>*+* {
+	@apply mt-0 mb-4;
+}
 
+.markdown li+li {
+	@apply mt-1;
+}
 
+.markdown li>p+p {
+	@apply mt-6;
+}
 
+.markdown strong {
+	@apply font-semibold;
+}
 
+.markdown a {
+	@apply text-indigo-600 font-semibold;
+}
 
+.markdown strong a {
+	@apply font-bold;
+}
 
 .markdown h1 {
 	@apply leading-tight border-b text-4xl font-semibold mb-4 mt-6 pb-2;
@@ -54,10 +75,26 @@ h1 {
 	@apply text-base border-l-4 border-gray-300 pl-4 pr-4 text-gray-600;
 }
 
-
-.markdown .hljs-deletion, .hljs-addition {
-	@apply text-gray-900 !important
+.markdown code {
+	@apply font-mono text-sm inline bg-gray-200 rounded px-1 py-05;
 }
+
+.markdown pre {
+	@apply bg-gray-100 rounded p-4;
+}
+
+.markdown pre code {
+	@apply block bg-transparent p-0 overflow-visible rounded-none;
+}
+
+.markdown ul {
+	@apply text-base pl-8 list-disc;
+}
+
+.markdown ol {
+	@apply text-base pl-8 list-decimal;
+}
+
 .markdown kbd {
 	@apply text-xs inline-block rounded border px-1 py-05 align-middle font-normal font-mono shadow;
 }
