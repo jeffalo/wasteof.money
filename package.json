@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "npm run serve",
-    "dev": "nodemon index.js",
+    "dev": "nodemon index.js & npm run tailwind:build",
     "serve": "node index.js",
     "tailwind:build": "postcss tailwind.css -o static/assets/css/style.css",
     "setup": "node env.js"
@@ -14,6 +14,7 @@
   "author": "",
   "license": "GPLv3",
   "dependencies": {
+    "@tailwindcss/typography": "^0.3.1",
     "autoprefixer": "^10.0.2",
     "bcrypt": "^5.0.0",
     "cookie-parser": "^1.4.5",
