@@ -322,7 +322,7 @@ app.post(
 
 app.post("/update-username", checkLoggedIn(), async (req, res) => {
   var userCookie = req.cookies.token,
-    user = res.locals.user,
+    user = res.locals.requester,
     username = req.body.username;
 
   if (req.is("application/json")) {
@@ -353,7 +353,7 @@ app.post("/update-username", checkLoggedIn(), async (req, res) => {
 });
 
 app.post("/delete-account", checkLoggedIn(), async (req, res) => {
-  var user = res.locals.user;
+  var user = res.locals.requester;
 
   if (req.xhr && user) {
     res.status(501).json({ error: "account deletion is not implemented yet" });
