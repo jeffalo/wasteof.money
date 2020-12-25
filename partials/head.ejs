@@ -5,13 +5,15 @@
     <meta property="og:title" content="wasteof.money<%= page? ' | '+page: '' %>" />
     <link rel="icon" href="/assets/images/brand/logo-full.svg">
     <meta property="og:site_name" content="wasteof.money" />
-    <meta content="wasteof.money is a dead simple social media which focuses on interaction." property="og:description"> <!-- in the future, this should show the users bio if its a profile -->
     <meta name="theme-color" content="#5850ec">
 
     <% if(locals.profile) { %>
     <meta property="og:type" content="profile">
     <meta property="profile:username" content="<%= username %>">
-    <meta property="og:image" content="https://dev.wasteof.money/picture/<%= username %>"> <!-- change this when released -->
+    <meta property="og:image" content="https://dev.wasteof.money/picture/<%= username %>"> <!-- change this to remove dev url when released -->
+    <meta content="Sample bio." property="og:description"> <!-- in the future, this should show the users bio if its a profile -->
+    <% } else { %>
+    <meta content="wasteof.money is a dead simple social media which focuses on interaction." property="og:description">
     <% } %>
 
     <link rel="stylesheet" href="/assets/css/style.css">
