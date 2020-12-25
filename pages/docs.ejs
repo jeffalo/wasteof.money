@@ -20,7 +20,7 @@
                 
                 </div>
               </nav>
-              <article class='markdown prose'>
+              <article class='markdown'>
                 <h1><%- doc.meta.title %></h1>
                 <% if(doc.meta.author) { %>
                 <span class='block italic text-gray-600'>author: <a href="/users/<%= doc.meta.author %>">@<%= doc.meta.author %></a></span>
@@ -35,7 +35,7 @@
 </body>
 <%- include('../partials/scripts.ejs'); %>
 <% if(doc.meta.code) { %>
-    <link rel="stylesheet" href="/assets/css/github-dark.css">
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.4.1/build/styles/github.min.css">
     <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.4.1/build/highlight.min.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
 <% } %>
