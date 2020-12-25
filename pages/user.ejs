@@ -20,9 +20,10 @@
             class="group relative inline-block py-2 px-4 border border-transparent text-sm leading-5 font-medium rounded-md text-white <%= user.followers.includes(loggedInUser._id.toString())? 'bg-gray-600 hover:bg-gray-500' : 'bg-indigo-600 hover:bg-indigo-500' %> transition duration-150 ease-in-out">
             <span class="iconify inline-block mr-1" data-icon="uil:user-plus" data-inline="true"></span>
             <span class='inline-block'
-                id='follower-count'><%= user.followers ? user.followers.length.toString() : '0' %></span>
+                id='follow-text'>Follow</span>
         </button>
         <% } %>
+        <p class="text-gray-700"><a href='#'><span id='follower-count'><%= user.followers ? user.followers.length.toString() : '0' %></span> followers</a> | <a href='#'><%= user.following ? user.following.length.toString() : '0' %> following</a></p> <!-- todo: make api also find who the user is following -->
         <p class="text-gray-700 italic">id: <%= user._id %></p>
         <div v-for="post in posts" class="max-w-2xl flex p-6 mx-auto my-5 bg-white rounded-lg shadow-md" v-bind:class="{ 'bg-indigo-100': post.highlight }">
             <div class="pt-1">
@@ -145,10 +146,12 @@
         if (followjson.ok) {
             document.getElementById('follower-count').innerText = followjson.new.toString() || 'error'
             if (followjson.action == 'follow') {
+                document.getElementById('follow-text').innerText = `Unfollow`
                 followButton.classList.remove('bg-indigo-600', 'hover:bg-indigo-500')
                 followButton.classList.add('bg-gray-600', 'hover:bg-gray-500')
             }
             if (followjson.action == 'unfollow') {
+                document.getElementById('follow-text').innerText = `Follow`
                 followButton.classList.remove('bg-gray-600', 'hover:bg-gray-500')
                 followButton.classList.add('bg-indigo-600', 'hover:bg-indigo-500')
             }
