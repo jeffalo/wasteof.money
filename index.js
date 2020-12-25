@@ -704,6 +704,18 @@ app.post("/users/:name/follow", checkLoggedIn(), async function(req, res) {
   }
 });
 
+app.get('/:user', async (req, res, next) => {
+  // user redirect is second last so that if anything above exists then use that instead
+  var username = req.params.user
+  var user = await findUserData(username)
+  if(user) {
+    console.log('user found')
+    res.redirect(`/users/${username}`)
+  } else {
+    next()
+  }
+})
+
 app.use((req, res, next) => {
   // 404 page always last
   var user = res.locals.requester,
