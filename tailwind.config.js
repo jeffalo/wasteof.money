@@ -3,7 +3,16 @@ module.exports = {
     // removeDeprecatedGapUtilities: true,
     // purgeLayersByDefault: true,
   },
-  purge: [],
+  plugins: [
+    require('@tailwindcss/typography'),
+    // ...
+  ],
+  purge: {
+    enabled: true,
+    mode: 'all',
+    "content": ['./pages/*.ejs', './partials/*.ejs']
+  },
+
   theme: {
     extend: {},
     inset: {
