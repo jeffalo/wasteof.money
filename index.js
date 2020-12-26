@@ -482,10 +482,13 @@ app.get("/users", function(req, res) {
 app.get("/api/users/:user", async (req, res) => {
   var user = await findUserData(req.params.user);
   if (user) {
+    var following = await users.find({ followers : { $all : [user._id.toString()] }})
+    console.log(following)
     res.json({
       _id: user._id,
       name: user.name,
-      followers: user.followers.length
+      followers: user.followers.length,
+      following: following.length
     });
   } else {
     res.status(404).json({ error: "no user found" });
@@ -527,6 +530,9 @@ app.get("/users/:user", async function(req, res, next) {
     user = await findUserData(req.params.user);
 
   if (user) {
+    var following = await users.find({ followers : { $all : [user._id.toString()] }})
+    user.following = following
+  
     ejs.renderFile(
       __dirname + "/pages/user.ejs",
       { user, loggedInUser, loggedIn },
@@ -653,19 +659,26 @@ app.post("/users/:name/follow", checkLoggedIn(), async function(req, res) {
   if (req.xhr) {
     var followUser = await findUserData(req.params.name);
     if (followUser) {
+
       var followers = followUser.followers || [];
       if (followers.includes(user._id.toString())) {
         //already follower, unfollow
         followers = followers.filter(i => i !== user._id.toString());
+
         try {
           await users.update(
             { name: followUser.name },
             { $set: { followers } }
           );
+
+          var following = await users.find({ followers : { $all : [followUser._id.toString()] }})
+          
+
           res.json({
             ok: "unfollowing",
             action: "unfollow",
-            new: followers.length
+            followers: followers.length,
+            following: following.length,
           });
         } catch (error) {
           console.log(error);
@@ -684,10 +697,14 @@ app.post("/users/:name/follow", checkLoggedIn(), async function(req, res) {
             followUser.name,
             `<a href='/users/${user.name}'>@${user.name}</a> is now following you.`
           );
+
+          var following = await users.find({ followers : { $all : [followUser._id.toString()] }})
+
           res.json({
             ok: "now following",
             action: "follow",
-            new: followers.length + 1
+            followers: followers.length+1,
+            following: following.length,
           });
         } catch (error) {
           console.log(error);
