@@ -33,7 +33,6 @@
                 <p class="text-base text-gray-500 italic leading-normal">
                     {{ new Date(post.time).toLocaleDateString("en-US") + ' ' + new Date(post.time).toLocaleTimeString("en-US") }}
                     - {{ post._id }}</p>
-                <% if(loggedInUser) { %>
                 <div>
                     <span @click="lovePost(post._id)" tabindex="0" class="love"
                         v-bind:class="{ 'text-red-600': post.loves.includes(loggedInUserID) }">
@@ -43,8 +42,6 @@
                     </span>
 
                     <span v-bind:data-post-count-id='post._id'>{{ post.loves.length }}</span>
-                    <!-- text-red-600 -->
-
                     <!-- 
                     <span data-post-id='{{ post._id }}'
                         class="fav iconify inline-block hover:text-yellow-400 transition-color duration-200 cursor-pointer"
@@ -52,9 +49,7 @@
                     -->
 
                     <!-- text-yellow-500 -->
-
                 </div>
-                <% } %>
             </div>
         </div>
         <button v-if='!last' @click="loadMore()" href="/login"
