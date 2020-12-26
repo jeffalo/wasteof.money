@@ -614,7 +614,7 @@ app.post("/posts/:id/love", checkLoggedIn(), async function(req, res) {
               posts
                 .update({ _id: req.params.id }, { $set: { loves: loves } })
                 .then(() => {
-                  res.json({ ok: "loved post", new: loves, action: "love" });
+                  res.json({ ok: "loved post", loves: loves, action: "love" });
                 })
                 .catch(updateerr => {
                   console.log(updateerr);
@@ -627,7 +627,7 @@ app.post("/posts/:id/love", checkLoggedIn(), async function(req, res) {
               posts
                 .update({ _id: req.params.id }, { $set: { loves: loves } })
                 .then(() => {
-                  res.json({ ok: "unloved", new: loves, action: "unlove" });
+                  res.json({ ok: "unloved", loves: loves, action: "unlove" });
                 })
                 .catch(updateerr => {
                   console.log(updateerr);
