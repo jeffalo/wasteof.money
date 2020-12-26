@@ -9,7 +9,7 @@ a {
 }
 
 h1 {
-	@apply font-bold text-2xl inline-block
+	@apply font-bold text-2xl inline-block;
 }
 
 /* markdown stuff for documentation pages */
@@ -116,4 +116,10 @@ h1 {
 
 .markdown .highlight pre {
 	@apply bg-gray-100 !important;
+}
+
+/* sweet alert mods */
+
+.swal2-confirm{
+	@apply bg-indigo-500 !important;
 }
