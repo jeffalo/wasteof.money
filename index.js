@@ -3,10 +3,10 @@ const ejs = require("ejs");
 const marked = require("marked");
 const matter = require("gray-matter");
 const rateLimit = require("express-rate-limit");
-
 var bodyParser = require("body-parser");
 var cookieParser = require("cookie-parser");
 var bcrypt = require("bcrypt");
+var sizeOf = require('image-size');
 const fs = require("fs");
 const path = require("path");
 
@@ -37,11 +37,11 @@ app.use(
   })
 );
 
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
+app.use(bodyParser.json({ limit: '10mb' }));
 app.use(cookieParser());
 
-app.use(function(req, res, next) {
+app.use(function (req, res, next) {
   if (req.url == "/") return next();
   if (req.url.slice(-1) == "/") {
     res.redirect(req.url.slice(0, -1));
@@ -82,11 +82,11 @@ app.use(
 function checkLoggedIn(cb) {
   const callback =
     cb ||
-    function(req, res) {
+    function (req, res) {
       if (req.method === "GET") res.redirect("/");
       else res.status(401).json({ error: "requires login" });
     };
-  return function(req, res, next) {
+  return function (req, res, next) {
     if (!res.locals.loggedIn) callback(req, res, next);
     else next();
   };
@@ -95,20 +95,20 @@ function checkLoggedIn(cb) {
 function checkLoggedOut(cb) {
   const callback =
     cb ||
-    function(req, res) {
+    function (req, res) {
       if (req.method === "GET") res.redirect("/");
       else
         res
           .status(412)
           .json({ error: "can't complete this action while logged in" });
     };
-  return function(req, res, next) {
+  return function (req, res, next) {
     if (res.locals.loggedIn) callback(req, res, next);
     else next();
   };
 }
 
-app.get("/", function(req, res) {
+app.get("/", function (req, res) {
   var user = res.locals.requester,
     loggedIn = res.locals.loggedIn;
 
@@ -143,7 +143,7 @@ app.get("/docs/:page", async (req, res, next) => {
       docarray.push(matteredData);
     }
     //sort docarray real quick
-    docarray.sort(function(a, b) {
+    docarray.sort(function (a, b) {
       if (a.data.title < b.data.title) {
         return -1;
       }
@@ -192,7 +192,7 @@ app.get("/docs/:page", async (req, res, next) => {
   });
 });
 
-app.get("/login", checkLoggedOut(), function(req, res) {
+app.get("/login", checkLoggedOut(), function (req, res) {
   ejs.renderFile(
     __dirname + "/pages/login.ejs",
     { user: null, loggedIn: false }, // we know they're logged out because of the checkLoggedOut middleware
@@ -203,7 +203,7 @@ app.get("/login", checkLoggedOut(), function(req, res) {
   );
 });
 
-app.get("/join", checkLoggedOut(), function(req, res) {
+app.get("/join", checkLoggedOut(), function (req, res) {
   ejs.renderFile(
     __dirname + "/pages/join.ejs",
     { user: null, loggedIn: false }, // ditto
@@ -214,7 +214,7 @@ app.get("/join", checkLoggedOut(), function(req, res) {
   );
 });
 
-app.get("/logout", checkLoggedIn(), function(req, res) {
+app.get("/logout", checkLoggedIn(), function (req, res) {
   var userCookie = req.cookies.token;
   removeToken(userCookie);
   res.cookie("token", "");
@@ -226,14 +226,14 @@ app.post(
   checkLoggedOut((req, res) =>
     res.status(412).json({ error: "already logged in" })
   ),
-  async function(req, res) {
+  async function (req, res) {
     if (req.is("application/json")) {
       var username = req.body.username.toLowerCase();
       var password = req.body.password;
       const user = await findUserData(username);
 
       if (user) {
-        bcrypt.compare(password, user.password, function(err, result) {
+        bcrypt.compare(password, user.password, function (err, result) {
           if (result) {
             var token = makeToken(32);
             addToken(token, user._id);
@@ -269,11 +269,11 @@ app.post(
       });
     }
   }),
-  async function(req, res) {
+  async function (req, res) {
     if (req.is("application/json")) {
       var username = req.body.username.toLowerCase(),
         password = req.body.password;
-      bcrypt.hash(password, saltRounds, async function(err, hashedPassword) {
+      bcrypt.hash(password, saltRounds, async function (err, hashedPassword) {
         if (err) {
           console.log(err);
           res.status(500).json({ error: "password hashing error" });
@@ -364,7 +364,7 @@ app.post("/delete-account", checkLoggedIn(), async (req, res) => {
   }
 });
 
-app.get("/explore", async function(req, res) {
+app.get("/explore", async function (req, res) {
   var user = res.locals.requester,
     loggedIn = res.locals.loggedIn;
 
@@ -390,7 +390,7 @@ app.get("/explore", async function(req, res) {
     );
   }
 });
-app.get("/settings", checkLoggedIn(), async function(req, res) {
+app.get("/settings", checkLoggedIn(), async function (req, res) {
   var user = res.locals.requester,
     loggedIn = res.locals.loggedIn;
   // logged in settings page
@@ -418,10 +418,10 @@ app.get("/api/messages", checkLoggedIn(), async (req, res) => {
     read,
     last
   };
-  messages.unread = messages.unread.sort(function(x, y) {
+  messages.unread = messages.unread.sort(function (x, y) {
     return y.time - x.time;
   });
-  messages.read = messages.read.sort(function(x, y) {
+  messages.read = messages.read.sort(function (x, y) {
     return y.time - x.time;
   });
   res.json(messages);
@@ -469,7 +469,7 @@ app.get(
   }
 );
 
-app.get("/users", function(req, res) {
+app.get("/users", function (req, res) {
   users.find({}).then(docs => {
     var userList = [];
     docs.forEach(i => {
@@ -482,7 +482,7 @@ app.get("/users", function(req, res) {
 app.get("/api/users/:user", async (req, res) => {
   var user = await findUserData(req.params.user);
   if (user) {
-    var following = await users.find({ followers : { $all : [user._id.toString()] }})
+    var following = await users.find({ followers: { $all: [user._id.toString()] } })
     console.log(following)
     res.json({
       _id: user._id,
@@ -506,7 +506,8 @@ app.get("/api/users/:user/posts", async (req, res) => {
 
   for (var i in userPosts) {
     var poster = await findUserDataByID(userPosts[i].poster);
-    userPosts[i].poster = poster.name; // this is inefficent, we know the user will always be the smae, but hopefully mongodb is fast so this won't be an issue
+    userPosts[i].poster = poster.name; // this is inefficent, we know the user will always be the smae, but mongodb is webscale so this won't be an issue
+    userPosts[i].posterID = poster._id
   }
 
   var page = parseInt(req.query.page) || 1;
@@ -524,15 +525,15 @@ app.get("/api/users/:user/posts/:post", async (req, res) => {
   res.redirect(`/api/posts/${req.params.post}`);
 });
 
-app.get("/users/:user", async function(req, res, next) {
+app.get("/users/:user", async function (req, res, next) {
   var loggedInUser = res.locals.requester,
     loggedIn = res.locals.loggedIn,
     user = await findUserData(req.params.user);
 
   if (user) {
-    var following = await users.find({ followers : { $all : [user._id.toString()] }})
+    var following = await users.find({ followers: { $all: [user._id.toString()] } })
     user.following = following
-  
+
     ejs.renderFile(
       __dirname + "/pages/user.ejs",
       { user, loggedInUser, loggedIn },
@@ -546,17 +547,72 @@ app.get("/users/:user", async function(req, res, next) {
   }
 });
 
-app.get("/picture/:user", async function(req, res, next) {
-  if (fs.existsSync(`./uploads/profiles/${req.params.user}.png`)) {
-    res.sendFile(__dirname + `/uploads/profiles/${req.params.user}.png`);
+app.delete("/picture/:user", checkLoggedIn(), async (req, res) => { // 
+  var requester = res.locals.requester
+  if(!req.xhr) return res.status(403).json({ error: "must be requested with xhr" });
+  
+  if (req.params.user == requester._id) {
+    try {
+      await fs.promises.unlink(`./uploads/profiles/${req.params.user}.png`)
+      res.json({ ok: 'deleted picture' })
+    }
+    catch (err) {
+      console.log(err)
+      res.status(500).json({ error: 'failed to delete file' })
+    }
   } else {
+    res.status(403).json({ error: ':user and requester dont match' })
+  }
+})
+
+app.post("/picture/:user", checkLoggedIn(), async (req, res) => {
+  // todo, verify image dimentions etc etc
+  var requester = res.locals.requester
+  if(!req.xhr) return res.status(403).json({ error: "must be requested with xhr" });
+  if (req.params.user == requester._id) {
+    //console.log(req.body.image.toString())
+    var data = req.body.image
+    var base64Data = data.replace(/^data:image\/png;base64,/, "");
+    base64Data += base64Data.replace('+', ' ');
+    binaryData = Buffer.from(base64Data, 'base64').toString('binary');
+    try {
+      const dimensions = await sizeOf(Buffer.from(base64Data, 'base64'));
+      if (dimensions.width == 500 && dimensions.height == 500 && dimensions.type == 'png') {
+        await fs.promises.writeFile(`./uploads/profiles/${req.params.user}.png`, binaryData, "binary")
+        res.json({ ok: 'uploaded image successfully' })
+      } else {
+        res.status(422).json({ error: 'bad image size' })
+      }
+    }
+    catch (err) {
+      console.log(err)
+      res.status(500).json({ error: 'faild to write image to disk' })
+    }
+  } else {
+    res.status(403).json({ error: ':user and requester dont match' })
+  }
+})
+
+app.get("/picture/:user", async function (req, res, next) {
+  var user = await findUserDataByID(req.params.user)
+
+  if (user) {
+    if (fs.existsSync(`./uploads/profiles/${user._id}.png`)) { // if the user has an image, send that
+      res.sendFile(__dirname + `/uploads/profiles/${user._id}.png`);
+    } else { // if the user exists but doesnt have an image make one from their name
+      var file = jdenticon.toPng(user.name, 128);
+      res.set("Content-Type", "image/png");
+      res.send(file);
+    }
+  } else { // if the user doesn't exist, resort to using the id from url to make the image
     var file = jdenticon.toPng(req.params.user, 128);
     res.set("Content-Type", "image/png");
     res.send(file);
   }
+
 });
 
-app.get("/api/posts/:post", async function(req, res) {
+app.get("/api/posts/:post", async function (req, res) {
   try {
     var post = await posts.findOne({ _id: req.params.post }),
       poster = await findUserDataByID(post.poster);
@@ -567,7 +623,7 @@ app.get("/api/posts/:post", async function(req, res) {
   }
 });
 
-app.get("/posts/:post", async function(req, res, next) {
+app.get("/posts/:post", async function (req, res, next) {
   try {
     var post = await posts.findOne({ _id: req.params.post }),
       poster = await findUserDataByID(post.poster);
@@ -577,7 +633,7 @@ app.get("/posts/:post", async function(req, res, next) {
   }
 });
 
-app.post("/post", checkLoggedIn(), async function(req, res) {
+app.post("/post", checkLoggedIn(), async function (req, res) {
   var user = res.locals.requester;
 
   if (req.is("application/json")) {
@@ -600,7 +656,7 @@ app.post("/post", checkLoggedIn(), async function(req, res) {
   }
 });
 
-app.post("/posts/:id/love", checkLoggedIn(), async function(req, res) {
+app.post("/posts/:id/love", checkLoggedIn(), async function (req, res) {
   var user = res.locals.requester;
   if (req.xhr) {
     try {
@@ -654,7 +710,7 @@ app.post("/posts/:id/love", checkLoggedIn(), async function(req, res) {
   }
 });
 
-app.post("/users/:name/follow", checkLoggedIn(), async function(req, res) {
+app.post("/users/:name/follow", checkLoggedIn(), async function (req, res) {
   var user = res.locals.requester;
   if (req.xhr) {
     var followUser = await findUserData(req.params.name);
@@ -671,8 +727,8 @@ app.post("/users/:name/follow", checkLoggedIn(), async function(req, res) {
             { $set: { followers } }
           );
 
-          var following = await users.find({ followers : { $all : [followUser._id.toString()] }})
-          
+          var following = await users.find({ followers: { $all: [followUser._id.toString()] } })
+
 
           res.json({
             ok: "unfollowing",
@@ -698,12 +754,12 @@ app.post("/users/:name/follow", checkLoggedIn(), async function(req, res) {
             `<a href='/users/${user.name}'>@${user.name}</a> is now following you.`
           );
 
-          var following = await users.find({ followers : { $all : [followUser._id.toString()] }})
+          var following = await users.find({ followers: { $all: [followUser._id.toString()] } })
 
           res.json({
             ok: "now following",
             action: "follow",
-            followers: followers.length+1,
+            followers: followers.length + 1,
             following: following.length,
           });
         } catch (error) {
@@ -725,7 +781,7 @@ app.get('/:user', async (req, res, next) => {
   // user redirect is second last so that if anything above exists then use that instead
   var username = req.params.user
   var user = await findUserData(username)
-  if(user) {
+  if (user) {
     console.log('user found')
     res.redirect(`/users/${username}`)
   } else {
@@ -769,6 +825,11 @@ function findUserData(name) {
 }
 
 function findUserDataByID(id) {
+  id = id.toString()
+  if (id.length !== 24) {
+    id = "000000000000000000000000" // if the id isn't 12 bytes, use a placeholder
+  }
+
   return new Promise(async (resolve, reject) => {
     try {
       var user = await users.findOne({ _id: id });
@@ -801,7 +862,7 @@ function makeToken(length) {
   // make login tokens used by the join and login systems
   const set = "abcdefghijklmnopABCDEFGHIJKLMNOP0123456789";
   var res = [
-    ...(function*() {
+    ...(function* () {
       for (let i = 0; i < length; i++)
         yield set[Math.floor(Math.random() * set.length)];
     })()

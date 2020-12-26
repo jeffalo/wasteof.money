@@ -1,47 +1,186 @@
 <!DOCTYPE html>
 <html lang="en">
-<%- include('../partials/head.ejs', {page: "settings"}); %>
+<%- include('../partials/head.ejs', {page: "settings" , croppie: true}); %>
 
-<body class="bg-gray-100">
-  <%- include('../partials/nav.ejs', {active: "settings", user, loggedIn, noPost: true}); %>
+  <body class="bg-gray-100">
+    <%- include('../partials/nav.ejs', {active: "settings" , user, loggedIn, noPost: true}); %>
 
-  <main class="container mx-auto px-4 mt-24 md:mt-16">
-    <h1>Settings</h1>
-    <section class="mt-2 mb-5 bg-white p-5 rounded-xl">
-      <h1 class="font-bold text-2xl text-gray-700 mb-4">Account</h1>
-      <form id='username-form'>
-        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 my-2 rounded relative" style="display: none;" id='name-alert' role="alert">
-          <strong class="font-bold">Error changing username!</strong>
-          <span class="block sm:inline" id='name-msg'>Something seriously bad happened.</span>
-        </div>
-        <label for="username">Username: </label>
-        <input
-          class="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:shadow-outline-blue focus:border-blue-300 focus:z-10 sm:text-sm sm:leading-5"
-          name="username" type='text' id="username" value="<%= user.name %>">
-        <p class="my-2 text-gray-500">Note that changing your username may have <a href='/docs/faq#can-i-change-my-username'>undesirable
-            consequences</a></p>
-        <input class="block p-2 text-white bg-indigo-500 rounded my-2 cursor-pointer" type="submit" value="Update">
-      </form>
-    </section>
+      <main class="container mx-auto px-4 mt-24 md:mt-16">
+        <h1>Settings</h1>
+        <input type="hidden" id='user-id' value="<%= user._id %>">
+        <section class="mt-2 mb-5 bg-white p-5 rounded-xl">
+          <h1 class="font-bold text-2xl text-gray-700 mb-4 block">Account</h1>
+          <img src="/picture/<%= user._id %>" class='rounded-full h-20 inline-block shadow'><a
+            class='ml-2 cursor-pointer' id='change-picture'>change</a><a class='ml-2 cursor-pointer'
+            id='delete-picture'>reset</a>
+          <form id='username-form'>
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 my-2 rounded relative"
+              style="display: none;" id='name-alert' role="alert">
+              <strong class="font-bold">Error changing username!</strong>
+              <span class="block sm:inline" id='name-msg'>Something seriously bad happened.</span>
+            </div>
+            <label for="username">Username: </label>
+            <input
+              class="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:shadow-outline-blue focus:border-blue-300 focus:z-10 sm:text-sm sm:leading-5"
+              name="username" type='text' id="username" value="<%= user.name %>">
+            <p class="my-2 text-gray-500">Note that changing your username may have <a
+                href='/docs/faq#can-i-change-my-username'>undesirable
+                consequences</a></p>
+            <input class="block p-2 text-white bg-indigo-500 rounded my-2 cursor-pointer" type="submit" value="Update">
+          </form>
+        </section>
 
-    <section class="mt-2 mb-5 bg-white p-5 rounded-xl">
-      <h1 class="font-bold text-2xl text-gray-700 mb-4">Danger zone</h1>
-      <details class='text-gray-700'>
-        <summary>I want to delete my account</summary>
-        <form id='delete-form'>
-          <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 my-2 rounded relative" style="display: none;" id='delete-alert' role="alert">
-            <strong class="font-bold">Error changing username!</strong>
-            <span class="block sm:inline" id='delete-msg'>Something seriously bad happened.</span>
-          </div>
-          <input type="checkbox" name="agree" id="agree"><label class='ml-2' for="agree">I understand the severity of this action, and that accounts cannot be recovered.</label>
-          <input id='delete-submit' class="block p-2 text-white bg-red-200 rounded my-2 cursor-pointer" type="submit" value="Delete <%= user.name %>" disabled>
-        </form>
-      </details>
-    </section>
+        <section class="mt-2 mb-5 bg-white p-5 rounded-xl">
+          <h1 class="font-bold text-2xl text-gray-700 mb-4">Danger zone</h1>
+          <details class='text-gray-700'>
+            <summary>I want to delete my account</summary>
+            <form id='delete-form'>
+              <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 my-2 rounded relative"
+                style="display: none;" id='delete-alert' role="alert">
+                <strong class="font-bold">Error deleting account!</strong>
+                <span class="block sm:inline" id='delete-msg'>Something seriously bad happened.</span>
+              </div>
+              <input type="checkbox" name="agree" id="agree"><label class='ml-2' for="agree">I understand the severity
+                of this action, and that accounts cannot be recovered.</label>
+              <input id='delete-submit' class="block p-2 text-white bg-red-200 rounded my-2 cursor-pointer"
+                type="submit" value="Delete <%= user.name %>" disabled>
+            </form>
+          </details>
+        </section>
 
-  </main>
-</body>
-<script>
+      </main>
+  </body>
+  <script>
+    var userID = document.getElementById('user-id').value
+    var change = document.getElementById('change-picture')
+    change.addEventListener('click', e => {
+      var steps = ['1', '2', '3']
+
+
+      Swal.fire({
+        title: 'Select image',
+        input: 'file',
+        confirmButtonText: 'Next',
+        progressSteps: steps,
+        currentProgressStep: '0',
+        inputAttributes: {
+          'accept': 'image/x-png,image/gif,image/jpeg',
+          'aria-label': 'Upload your profile picture'
+        }
+      })
+        .then(async result => {
+          var file = result.value
+          if (file) {
+            const reader = new FileReader()
+            reader.readAsDataURL(file)
+            reader.onload = async (e) => {
+              Swal.fire({
+                title: 'Crop',
+                html: '<img id="croppie">',
+                progressSteps: steps,
+                currentProgressStep: '1',
+                confirmButtonText: 'Upload',
+                preConfirm: async () => {
+                  var image = await croppie.result({ type: 'base64', size: { width: 500, height: 500 } })
+
+                  return fetch(`/picture/${userID}`, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({ image: image })
+                  })
+                    .then(response => response.json())
+                    .then(data => {
+                      if (data.ok) {
+                        Swal.fire({
+                          icon: 'success',
+                          title: 'Uploaded new profile picture successfully!',
+                          text: 'Please note that it may take a few moments for the changes to take effect.',
+                        })
+                      }
+                      if (data.error) {
+                        Swal.fire({
+                          icon: 'error',
+                          title: 'Failed to upload profile picture',
+                          text: data.error,
+                          footer: '<a href="https://github.com/jeffalo/wasteof.money/issues" target="_blank" rel="noopener">Report issues</a>'
+                        })
+                      }
+                    })
+                    .catch((err) => {
+                      console.error(err)
+                      Swal.fire({
+                        icon: 'error',
+                        title: 'Failed to upload profile picture',
+                        text: 'Request to server failed.',
+                        footer: '<a href="https://github.com/jeffalo/wasteof.money/issues" target="_blank" rel="noopener">Report issues</a>'
+                      })
+                    })
+                }
+              })
+              setTimeout(() => {
+                var el = document.getElementById('croppie');
+                window.croppie = new Croppie(el, {
+                  enableExif: true,
+                  viewport: {
+                    width: 200,
+                    height: 200
+                  },
+                  boundary: {
+                    width: 300,
+                    height: 300
+                  }
+                });
+                croppie.bind({
+                  url: e.target.result,
+                });
+              }, 301) /* wait until animation is over because croppie gets confused otherwise */
+
+            }
+          }
+        })
+    })
+
+    var deleteLink = document.getElementById('delete-picture')
+    deleteLink.addEventListener('click', e => {
+      Swal.fire({
+        title: 'Are you sure you want to reset your profile picture?',
+        showCancelButton: true,
+        confirmButtonText: `Reset`,
+        cancelButtonText: `Keep`,
+      }).then(async (result) => {
+        /* Read more about isConfirmed, isDenied below */
+        if (result.isConfirmed) {
+          fetch(`/picture/${userID}`, {
+            method: 'DELETE',
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest'
+            },
+          })
+            .then(res => res.json())
+            .then(data => {
+              if (data.ok) {
+                Swal.fire('Reset profile picture!', '', 'success')
+              }
+              if (data.error) {
+                Swal.fire({
+                  icon: 'error',
+                  title: 'Failed to reset profile picture',
+                  text: data.error,
+                  footer: '<a href="https://github.com/jeffalo/wasteof.money/issues" target="_blank" rel="noopener">Report issues</a>'
+                })
+              }
+            })
+        } else if (result.isDenied) {
+          Swal.fire('Changes are not saved', '', 'info')
+        }
+      })
+
+
+    })
+
     var usernameForm = document.getElementById('username-form')
     usernameForm.addEventListener('submit', e => {
       e.preventDefault()
@@ -54,8 +193,8 @@
     var deleteForm = document.getElementById('delete-form')
     var agree = document.getElementById('agree')
     var deleteSubmit = document.getElementById('delete-submit')
-    agree.addEventListener('input', e=>{
-      if(agree.checked){
+    agree.addEventListener('input', e => {
+      if (agree.checked) {
         deleteSubmit.disabled = false
         deleteSubmit.classList.replace('bg-red-200', 'bg-red-500')
       } else {
@@ -69,7 +208,7 @@
 
       deleteAccount()
     })
-    
+
     async function changeName(newUsername) {
       var res = await fetch('/update-username', {
         method: 'POST',
@@ -89,7 +228,7 @@
       }
     }
 
-    
+
     async function deleteAccount() { //todo
       var res = await fetch('/delete-account', {
         method: 'POST',
@@ -106,6 +245,7 @@
         document.getElementById('delete-msg').innerText = data.error
       }
     }
-</script>
+  </script>
+  <%- include('../partials/scripts.ejs'); %>
 
 </html>
