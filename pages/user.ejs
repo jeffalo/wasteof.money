@@ -20,7 +20,7 @@
             class="group relative inline-block py-2 px-4 border border-transparent text-sm leading-5 font-medium rounded-md text-white <%= user.followers.includes(loggedInUser._id.toString())? 'bg-gray-600 hover:bg-gray-500' : 'bg-indigo-600 hover:bg-indigo-500' %> transition duration-150 ease-in-out">
             <span class="iconify inline-block mr-1" data-icon="uil:user-plus" data-inline="true"></span>
             <span class='inline-block'
-                id='follow-text'>Follow</span>
+                id='follow-text'><%= user.followers.includes(loggedInUser._id.toString())? 'Unfollow' : 'Follow' %></span>
         </button>
         <% } %>
         <p class="text-gray-700"><a href='#'><span id='follower-count'><%= user.followers ? user.followers.length.toString() : '0' %></span> followers</a> | <a href='#'><span id='following-count'><%= user.following ? user.following.length.toString() : '0' %></span> following</a></p> <!-- todo: make api also find who the user is following -->
