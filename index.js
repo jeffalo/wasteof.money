@@ -322,7 +322,7 @@ app.post(
 
 app.post("/update-username", checkLoggedIn(), async (req, res) => {
   var userCookie = req.cookies.token,
-    user = res.locals.user,
+    user = res.locals.requester,
     username = req.body.username;
 
   if (req.is("application/json")) {
@@ -353,7 +353,7 @@ app.post("/update-username", checkLoggedIn(), async (req, res) => {
 });
 
 app.post("/delete-account", checkLoggedIn(), async (req, res) => {
-  var user = res.locals.user;
+  var user = res.locals.requester;
 
   if (req.xhr && user) {
     res.status(501).json({ error: "account deletion is not implemented yet" });
@@ -482,10 +482,13 @@ app.get("/users", function(req, res) {
 app.get("/api/users/:user", async (req, res) => {
   var user = await findUserData(req.params.user);
   if (user) {
+    var following = await users.find({ followers : { $all : [user._id.toString()] }})
+    console.log(following)
     res.json({
       _id: user._id,
       name: user.name,
-      followers: user.followers.length
+      followers: user.followers.length,
+      following: following.length
     });
   } else {
     res.status(404).json({ error: "no user found" });
@@ -527,6 +530,9 @@ app.get("/users/:user", async function(req, res, next) {
     user = await findUserData(req.params.user);
 
   if (user) {
+    var following = await users.find({ followers : { $all : [user._id.toString()] }})
+    user.following = following
+  
     ejs.renderFile(
       __dirname + "/pages/user.ejs",
       { user, loggedInUser, loggedIn },
@@ -608,7 +614,7 @@ app.post("/posts/:id/love", checkLoggedIn(), async function(req, res) {
               posts
                 .update({ _id: req.params.id }, { $set: { loves: loves } })
                 .then(() => {
-                  res.json({ ok: "loved post", new: loves, action: "love" });
+                  res.json({ ok: "loved post", loves: loves, action: "love" });
                 })
                 .catch(updateerr => {
                   console.log(updateerr);
@@ -621,7 +627,7 @@ app.post("/posts/:id/love", checkLoggedIn(), async function(req, res) {
               posts
                 .update({ _id: req.params.id }, { $set: { loves: loves } })
                 .then(() => {
-                  res.json({ ok: "unloved", new: loves, action: "unlove" });
+                  res.json({ ok: "unloved", loves: loves, action: "unlove" });
                 })
                 .catch(updateerr => {
                   console.log(updateerr);
@@ -653,19 +659,26 @@ app.post("/users/:name/follow", checkLoggedIn(), async function(req, res) {
   if (req.xhr) {
     var followUser = await findUserData(req.params.name);
     if (followUser) {
+
       var followers = followUser.followers || [];
       if (followers.includes(user._id.toString())) {
         //already follower, unfollow
         followers = followers.filter(i => i !== user._id.toString());
+
         try {
           await users.update(
             { name: followUser.name },
             { $set: { followers } }
           );
+
+          var following = await users.find({ followers : { $all : [followUser._id.toString()] }})
+          
+
           res.json({
             ok: "unfollowing",
             action: "unfollow",
-            new: followers.length
+            followers: followers.length,
+            following: following.length,
           });
         } catch (error) {
           console.log(error);
@@ -684,10 +697,14 @@ app.post("/users/:name/follow", checkLoggedIn(), async function(req, res) {
             followUser.name,
             `<a href='/users/${user.name}'>@${user.name}</a> is now following you.`
           );
+
+          var following = await users.find({ followers : { $all : [followUser._id.toString()] }})
+
           res.json({
             ok: "now following",
             action: "follow",
-            new: followers.length + 1
+            followers: followers.length+1,
+            following: following.length,
           });
         } catch (error) {
           console.log(error);
@@ -703,6 +720,18 @@ app.post("/users/:name/follow", checkLoggedIn(), async function(req, res) {
     res.status(403).json({ error: "must be requested with xhr" });
   }
 });
+
+app.get('/:user', async (req, res, next) => {
+  // user redirect is second last so that if anything above exists then use that instead
+  var username = req.params.user
+  var user = await findUserData(username)
+  if(user) {
+    console.log('user found')
+    res.redirect(`/users/${username}`)
+  } else {
+    next()
+  }
+})
 
 app.use((req, res, next) => {
   // 404 page always last

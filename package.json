@@ -7,12 +7,12 @@
     "start": "npm run serve",
     "dev": "nodemon index.js",
     "serve": "node index.js",
-    "tailwind:css": "postcss static/tailwind.css -o static/style.css",
+    "tailwind:build": "postcss tailwind.css -o static/assets/css/style.css",
     "setup": "node env.js"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "GPLv3",
   "dependencies": {
     "autoprefixer": "^10.0.2",
     "bcrypt": "^5.0.0",

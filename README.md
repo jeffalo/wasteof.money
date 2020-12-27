@@ -25,7 +25,7 @@ npm i
 ```
 Next, build the css
 ```sh
-npm run tailwind:css
+npm run tailwind:build
 ```
 
 #### .env
