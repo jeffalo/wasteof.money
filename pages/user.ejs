@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<%- include('../partials/head.ejs', {page: user.name, vue: true, profile:true, username:user.name}); %>
+<%- include('../partials/head.ejs', {page: user.name, vue: true, vueIconifyIcons: {heart: "uil/heart"}, profile:true, username:user.name}); %>
 
 
 <body class='bg-gray-100'>
@@ -25,19 +25,16 @@
         <% } %>
         <p class="text-gray-700"><a href='#'><span id='follower-count'><%= user.followers ? user.followers.length.toString() : '0' %></span> followers</a> | <a href='#'><span id='following-count'><%= user.following ? user.following.length.toString() : '0' %></span> following</a></p> <!-- todo: make api also find who the user is following -->
         <p class="text-gray-700 italic">id: <%= user._id %></p>
-        <post v-for="post in posts" v-bind:key="post._id" v-bind:post="post" v-bind:logged-in-user-id="loggedInUserID" />
+        <post v-for="post in posts" v-bind:key="post._id" v-bind:post="post" v-bind:logged-in-user-id="loggedInUserID"></post>
         <button v-if='!last' @click="loadMore()" href="/login"
             class="max-w-2xl w-full mx-auto flex items-center justify-center mb-5 py-3 border border-transparent text-base font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 md:text-lg transition duration-150 ease-in-out">
             Load more
-        </button>
-        <span 
-                            class="iconify inline-block hover:text-red-400 transition-color duration-200 cursor-pointer"
-                            data-icon="uil:heart" data-inline="true"></span>
+        </button>                        
     </main>
 </body>
 
 <%- include('../partials/scripts.ejs'); %>
-<script type="module">
+<script type="module"> <!-- needs to be type module otherwise we can't use import/export statement -->
   import Post from "../assets/js/components/post.js";
     console.log('user script loaded')
     var user = document.getElementById('userName').value //TODO: is there a better way to do this? TODO: clean this the heck up
@@ -47,11 +44,10 @@
     const onePost = urlParams.get('post');
 
     if (userInput) var loggedInUserID = userInput.value;
-    Vue.component("post", Post);
     var app = new Vue({
         el: '#app',
         components: {
-        //  Post // this is much cleaner than doing Vue.component(...)
+          Post // this is much cleaner than doing Vue.component(...)
         },
         data: {
             page: 1,
@@ -170,7 +166,6 @@
             })
         }
     }
-  window.onerror = e => alert(e);
 </script>
 
 </html>

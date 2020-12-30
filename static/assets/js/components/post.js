@@ -1,4 +1,11 @@
+/* import IconifyIcon from "https://cdn.jsdelivr.net/npm/@iconify/vue@1";
+import heart from "https://cdn.jsdelivr.net/npm/@iconify-icons/uil/heart.js";
+IconifyIcon.addIcon("heart", heart);*/
+
 export default {
+  /* components: {
+    IconifyIcon
+  },*/
   props: {
     post: {
       type: Object,
@@ -62,9 +69,8 @@ export default {
               this.post._id
           )
         ]),
-        h(
-          "span",
-          {
+        h("div", [
+          h("span", {
             on: {
               click: () => this.$parent.lovePost(this.post._id) // we have to keep this as a function otherwise it will fire on page load and then not work.
             },
@@ -72,29 +78,19 @@ export default {
             class: {
               love: true,
               "text-red-600": this.post.loves.includes(this.loggedInUserID)
-            }
-          },
-          h("span", {
-            attrs: {
-              dataPostId: this.post._id,
-              dataInline: true,
-              dataIcon: "uil:heart"
             },
-            class: [
-              "iconify",
-              "inline-block",
-              "hover:text-red-400",
-              "transition-color",
-              "duration-200",
-              "cursor-pointer"
-            ]
-          })
-        ),
-        h(
-          "span",
-          { attrs: { "data-post-count-id": this.post._id } },
-          this.post.loves.length
-        )
+            domProps: {
+              innerHTML: `<span data-post-id="${this.post._id}"
+                            class="iconify inline-block hover:text-red-400 transition-color duration-200 cursor-pointer"
+                            data-icon="uil:heart" data-inline="true"></span>`
+            }
+          }),
+          h(
+            "span",
+            { attrs: { "data-post-count-id": this.post._id } },
+            this.post.loves.length
+          )
+        ])
       ]
     );
   }
