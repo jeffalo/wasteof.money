@@ -5,6 +5,7 @@ const matter = require("gray-matter");
 const rateLimit = require("express-rate-limit");
 var bodyParser = require("body-parser");
 var cookieParser = require("cookie-parser");
+const cookie = require('cookie')
 var bcrypt = require("bcrypt");
 var sizeOf = require('image-size');
 const fs = require("fs");
@@ -16,6 +17,8 @@ require("dotenv").config();
 
 const port = process.env.LISTEN_PORT || 8080;
 const app = express();
+var http = require('http').createServer(app);
+var io = require('socket.io')(http);
 
 const db = require("monk")(process.env.DB_URL);
 
@@ -60,7 +63,6 @@ app.use(async (req, res, next) => {
     } else {
       res.locals.loggedIn = false; // the account was deleted but token remains
       removeToken(userCookie);
-      console.log(tokens);
     }
   } else {
     res.locals.loggedIn = false;
@@ -412,7 +414,6 @@ app.get("/api/messages", checkLoggedIn(), async (req, res) => {
     read = paginate(user.messages.read, 15, page),
     last = false;
   if (paginate(user.messages.read, 15, page + 1).length == 0) last = true; //set last to true if this is the last page
-  console.log(read);
   var messages = {
     unread,
     read,
@@ -442,6 +443,10 @@ app.post("/api/messages/read", checkLoggedIn(), async (req, res) => {
     messages.unread = [];
     try {
       await users.update({ name: user.name }, { $set: { messages } });
+      var sockets = findSocketsByID(user._id)
+      sockets.forEach(s=>{
+        s.socket.emit('updateMessageCount', messages.unread.length)
+      })
       res.json({ ok: "cleared messages" });
     } catch (error) {
       console.log(error);
@@ -483,7 +488,6 @@ app.get("/api/users/:user", async (req, res) => {
   var user = await findUserData(req.params.user);
   if (user) {
     var following = await users.find({ followers: { $all: [user._id.toString()] } })
-    console.log(following)
     res.json({
       _id: user._id,
       name: user.name,
@@ -549,8 +553,8 @@ app.get("/users/:user", async function (req, res, next) {
 
 app.delete("/picture/:user", checkLoggedIn(), async (req, res) => { // 
   var requester = res.locals.requester
-  if(!req.xhr) return res.status(403).json({ error: "must be requested with xhr" });
-  
+  if (!req.xhr) return res.status(403).json({ error: "must be requested with xhr" });
+
   if (req.params.user == requester._id) {
     try {
       await fs.promises.unlink(`./uploads/profiles/${req.params.user}.png`)
@@ -568,7 +572,7 @@ app.delete("/picture/:user", checkLoggedIn(), async (req, res) => { //
 app.post("/picture/:user", checkLoggedIn(), async (req, res) => {
   // todo, verify image dimentions etc etc
   var requester = res.locals.requester
-  if(!req.xhr) return res.status(403).json({ error: "must be requested with xhr" });
+  if (!req.xhr) return res.status(403).json({ error: "must be requested with xhr" });
   if (req.params.user == requester._id) {
     //console.log(req.body.image.toString())
     var data = req.body.image
@@ -782,12 +786,31 @@ app.get('/:user', async (req, res, next) => {
   var username = req.params.user
   var user = await findUserData(username)
   if (user) {
-    console.log('user found')
     res.redirect(`/users/${username}`)
   } else {
     next()
   }
 })
+
+// socket.io live stuff (fun)
+
+var connected = []
+
+io.on('connection', async (socket) => {
+  const cookies = cookie.parse(socket.handshake.headers.cookie)
+  var tokenUser = findUser(cookies.token)
+  if(tokenUser){
+    var user = await findUserDataByID(tokenUser.id)
+
+    connected.push({
+      id: user._id.toString(),
+      socket: socket
+    })
+
+  } else {
+    socket.disconnect(true)
+  }
+});
 
 app.use((req, res, next) => {
   // 404 page always last
@@ -840,6 +863,11 @@ function findUserDataByID(id) {
   });
 }
 
+function findSocketsByID(id){
+  id = id.toString()
+  return connected.filter(s=>s.id == id)
+}
+
 function addMessage(name, text, time = Date.now()) {
   return new Promise(async (resolve, reject) => {
     try {
@@ -851,6 +879,10 @@ function addMessage(name, text, time = Date.now()) {
         time
       });
       var update = await users.update({ name: name }, { $set: { messages } });
+      var sockets = findSocketsByID(user._id)
+      sockets.forEach(s=>{
+        s.socket.emit('updateMessageCount', messages.unread.length)
+      })
       resolve(update);
     } catch (error) {
       reject(Error(error));
@@ -899,6 +931,6 @@ function paginate(array, page_size, page_number) {
   return array.slice((page_number - 1) * page_size, page_number * page_size);
 }
 
-app.listen(port, () => {
+http.listen(port, () => {
   console.log(`listening on http://localhost:${port}`);
 });
