@@ -797,18 +797,20 @@ app.get('/:user', async (req, res, next) => {
 var connected = []
 
 io.on('connection', async (socket) => {
-  const cookies = cookie.parse(socket.handshake.headers.cookie)
-  var tokenUser = findUser(cookies.token)
-  if(tokenUser){
-    var user = await findUserDataByID(tokenUser.id)
-
-    connected.push({
-      id: user._id.toString(),
-      socket: socket
-    })
-
-  } else {
-    socket.disconnect(true)
+  if(socket.handshake.headers.cookie){
+    const cookies = cookie.parse(socket.handshake.headers.cookie)
+    var tokenUser = findUser(cookies.token)
+    if(tokenUser){
+      var user = await findUserDataByID(tokenUser.id)
+  
+      connected.push({
+        id: user._id.toString(),
+        socket: socket
+      })
+  
+    } else {
+      socket.disconnect(true)
+    }
   }
 });
 
