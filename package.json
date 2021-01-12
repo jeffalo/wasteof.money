@@ -29,7 +29,8 @@
     "monk": "^7.3.2",
     "postcss": "^8.1.7",
     "postcss-cli": "^8.3.0",
-    "prompts": "^2.4.0"
+    "prompts": "^2.4.0",
+    "socket.io": "^3.0.4"
   },
   "devDependencies": {
     "tailwindcss": "^1.9.6",
