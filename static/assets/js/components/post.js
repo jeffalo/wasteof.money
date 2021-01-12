@@ -4,10 +4,9 @@ export default {
 			type: Object,
 			required: true
 		},
-		loggedInUserID: {}
+		loggedInUserId: {}
 	},
 	render(h) {
-		let post = this.post;
 		return h(
 			"div", {
 				class: {
@@ -72,7 +71,7 @@ export default {
 							},
 							class: {
 								love: true,
-									"text-red-600": this.post.loves.includes(this.loggedInUserID)
+									"text-red-600": this.post.loves.includes(this.loggedInUserId)
 							},
 							domProps: {
 								innerHTML: `<span data-post-id="${this.post._id}"
