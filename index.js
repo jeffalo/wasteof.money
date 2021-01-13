@@ -406,6 +406,30 @@ app.get("/settings", checkLoggedIn(), async function (req, res) {
   );
 });
 
+app.get("/api/top/users", async (req, res) => {
+  // top 10 or something most followed users
+  var top = await users.aggregate([
+    {
+      $addFields: {
+        followerCount: { $sum: "$followers" },
+      }
+    },
+    { $sort: { followerCount: -1 } },
+    { $limit: 10 }
+  ])
+
+  res.json(top.map(u => ({ id: u._id, name: u.name, followers: u.followers.length })))
+})
+
+app.get("/api/top/posts", async (req, res) => {
+  // top 10 or so most loved posts
+})
+
+app.get("/api/trending/posts", async (req, res) => {
+  var trending = await posts.find({}, { limit : 5 })
+  res.json(trending)
+})
+
 app.get("/api/messages", checkLoggedIn(), async (req, res) => {
   var user = res.locals.requester,
     page = parseInt(req.query.page) || 1;
@@ -413,19 +437,19 @@ app.get("/api/messages", checkLoggedIn(), async (req, res) => {
   var unread = user.messages.unread // don't paginate unread messages?
 
   var read = user.messages.read
-  
+
   unread = unread.sort(function (x, y) {
     return y.time - x.time;
   });
-  
+
   read = read.sort(function (x, y) {
     return y.time - x.time;
   });
-  
+
   read = paginate(read, 15, page)
-  
+
   var last = false;
-  
+
   if (paginate(user.messages.read, 15, page + 1).length == 0) last = true; //set last to true if this is the last page
   var messages = {
     unread,
@@ -452,7 +476,7 @@ app.post("/api/messages/read", checkLoggedIn(), async (req, res) => {
     try {
       await users.update({ name: user.name }, { $set: { messages } });
       var sockets = findSocketsByID(user._id)
-      sockets.forEach(s=>{
+      sockets.forEach(s => {
         s.socket.emit('updateMessageCount', messages.unread.length)
       })
       res.json({ ok: "cleared messages" });
@@ -805,17 +829,17 @@ app.get('/:user', async (req, res, next) => {
 var connected = []
 
 io.on('connection', async (socket) => {
-  if(socket.handshake.headers.cookie){
+  if (socket.handshake.headers.cookie) {
     const cookies = cookie.parse(socket.handshake.headers.cookie)
     var tokenUser = findUser(cookies.token)
-    if(tokenUser){
+    if (tokenUser) {
       var user = await findUserDataByID(tokenUser.id)
-  
+
       connected.push({
         id: user._id.toString(),
         socket: socket
       })
-  
+
     } else {
       socket.disconnect(true)
     }
@@ -873,9 +897,9 @@ function findUserDataByID(id) {
   });
 }
 
-function findSocketsByID(id){
+function findSocketsByID(id) {
   id = id.toString()
-  return connected.filter(s=>s.id == id)
+  return connected.filter(s => s.id == id)
 }
 
 function addMessage(name, text, time = Date.now()) {
@@ -890,7 +914,7 @@ function addMessage(name, text, time = Date.now()) {
       });
       var update = await users.update({ name: name }, { $set: { messages } });
       var sockets = findSocketsByID(user._id)
-      sockets.forEach(s=>{
+      sockets.forEach(s => {
         s.socket.emit('updateMessageCount', messages.unread.length)
       })
       resolve(update);
