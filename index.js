@@ -427,7 +427,7 @@ app.get("/api/top/posts", async (req, res) => {
 })
 
 app.get("/api/trending/posts", async (req, res) => {
-  var trending = await posts.find({}, { limit: 5 })
+  var trending = await posts.aggregate([{ $sample: { size: 10 } }])
   res.json(trending)
 })
 

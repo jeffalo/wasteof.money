@@ -9,12 +9,12 @@
     <main class='container mx-auto px-4 mt-24 md:mt-16' id='app' v-cloak>
         <h1>Explore</h1>
         <h2 class="font-medium my-2">Top users</h2>
-        <div v-for="user in topUsers" class="inline font-medium text-gray-800 mx-2">
+        <div v-for="user in topUsers" class="inline-block font-medium text-gray-800 mx-2">
             <a :href="`/users/${user.name}`">
                 <img :src="`/picture/${user.id}`" height="30px" class='rounded-full h-10 inline-block shadow'><span> {{ user.name }}</span>
             </a>
         </div>
-        <h2 class="font-medium my-2">Trending posts (they aren't actually trending because i haven't written an algorithm for this yet)</h2>
+        <h2 class="font-medium my-2">Random posts</h2>
         <post v-for="post in topPosts" v-bind:key="post._id" v-bind:post="post" v-bind:logged-in-user-id="'a'"></post>
     </main>
 </body>
