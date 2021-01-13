@@ -410,21 +410,29 @@ app.get("/api/messages", checkLoggedIn(), async (req, res) => {
   var user = res.locals.requester,
     page = parseInt(req.query.page) || 1;
 
-  var unread = user.messages.unread, // don't paginate unread messages?
-    read = paginate(user.messages.read, 15, page),
-    last = false;
+  var unread = user.messages.unread // don't paginate unread messages?
+
+  var read = user.messages.read
+  
+  unread = unread.sort(function (x, y) {
+    return y.time - x.time;
+  });
+  
+  read = read.sort(function (x, y) {
+    return y.time - x.time;
+  });
+  
+  read = paginate(read, 15, page)
+  
+  var last = false;
+  
   if (paginate(user.messages.read, 15, page + 1).length == 0) last = true; //set last to true if this is the last page
   var messages = {
     unread,
     read,
     last
   };
-  messages.unread = messages.unread.sort(function (x, y) {
-    return y.time - x.time;
-  });
-  messages.read = messages.read.sort(function (x, y) {
-    return y.time - x.time;
-  });
+
   res.json(messages);
 });
 
