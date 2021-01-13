@@ -410,16 +410,18 @@ app.get("/api/top/users", async (req, res) => {
   // top 10 or something most followed users
   var top = await users.aggregate([
     { $unwind: "$followers" },
-    {"$group": {
+    {
+      "$group": {
         "_id": "$_id",
         "name": { "$first": "$name" },
         "followers": { "$sum": 1 }
-    }},
+      }
+    },
     { $sort: { followers: -1 } },
     { $limit: 10 }
   ])
 
-  res.json(top.map(u=>({id:u._id, name:u.name, followers: u.followers})))
+  res.json(top.map(u => ({ id: u._id, name: u.name, followers: u.followers })))
 })
 
 app.get("/api/top/posts", async (req, res) => {
@@ -428,6 +430,13 @@ app.get("/api/top/posts", async (req, res) => {
 
 app.get("/api/trending/posts", async (req, res) => {
   var trending = await posts.aggregate([{ $sample: { size: 10 } }])
+  for (var i in trending) {
+    var poster = await findUserDataByID(trending[i].poster);
+    if (poster) {
+      trending[i].poster = poster.name;
+      trending[i].posterID = poster._id
+    }
+  }
   res.json(trending)
 })
 
@@ -543,8 +552,10 @@ app.get("/api/users/:user/posts", async (req, res) => {
 
   for (var i in userPosts) {
     var poster = await findUserDataByID(userPosts[i].poster);
-    userPosts[i].poster = poster.name; // this is inefficent, we know the user will always be the smae, but mongodb is webscale so this won't be an issue
-    userPosts[i].posterID = poster._id
+    if (poster) {
+      userPosts[i].poster = poster.name; // this is inefficent, we know the user will always be the smae, but mongodb is webscale so this won't be an issue
+      userPosts[i].posterID = poster._id
+    }
   }
 
   var page = parseInt(req.query.page) || 1;
