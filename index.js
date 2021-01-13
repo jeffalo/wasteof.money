@@ -665,6 +665,7 @@ app.get("/api/posts/:post", async function (req, res) {
     var post = await posts.findOne({ _id: req.params.post }),
       poster = await findUserDataByID(post.poster);
     post.poster = poster.name;
+    post.posterID = poster._id;
     res.json(post);
   } catch {
     res.status(404).json({ error: "no post found" });
