@@ -2,6 +2,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
 
+<% if (loggedIn) { %>
 <script src="/socket.io/socket.io.js"></script>
 
 <script>
@@ -26,3 +27,4 @@
         document.getElementById('message-count').innerText = count
     })
 </script>
+<% } %>
