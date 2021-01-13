@@ -5,7 +5,11 @@
 
 <body class='bg-gray-100'>
     <%- include('../partials/nav.ejs', {active: "explore", user, loggedIn}); %>
-
+    <div id='data' class='hidden'>
+        <% if(loggedIn){ %>
+        <input type="hidden" id="loggedInUserID" value="<%= loggedInUser._id %>">
+        <% } %>
+    </div>
     <main class='container mx-auto px-4 mt-24 md:mt-16' id='app' v-cloak>
         <h1>Explore</h1>
         <h2 class="font-medium my-2">Top users</h2>
@@ -15,14 +19,17 @@
             </a>
         </div>
         <h2 class="font-medium my-2">Random posts</h2>
-        <post v-for="post in topPosts" v-bind:key="post._id" v-bind:post="post" v-bind:logged-in-user-id="'a'"></post>
+        <post v-for="post in topPosts" v-bind:key="post._id" v-bind:post="post" v-bind:logged-in-user-id="loggedInUserID"></post>
     </main>
 </body>
 
 <%- include('../partials/scripts.ejs'); %>
+<script src="/assets/js/love.js"></script>
 <script type="module">
     import Post from "../assets/js/components/post.js";
-    
+    var userInput = document.getElementById('loggedInUserID')
+    if (userInput) var loggedInUserID = userInput.value
+
     var app = new Vue({
         el: '#app',
         components: {
@@ -30,7 +37,8 @@
         },
         data: {
             topUsers: [],
-            topPosts: []
+            topPosts: [],
+            loggedInUserID
         },
         async mounted() {
             var userRes = await fetch('/api/top/users')
@@ -41,6 +49,17 @@
             var postData = await postRes.json()
             this.topPosts = postData
         },
+        methods: {
+            lovePost: async function (id) {
+                love(id, (newLoves, action) => {
+                    // add _id to post loves array client side, so that it updates
+                    var post = this.topPosts.find(i => i._id == id)
+                    if (post) {
+                        post.loves = newLoves
+                    }
+                })
+            }
+        }
     })
 </script>
 </html>

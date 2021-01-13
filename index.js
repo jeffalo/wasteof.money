@@ -370,27 +370,14 @@ app.get("/explore", async function (req, res) {
   var user = res.locals.requester,
     loggedIn = res.locals.loggedIn;
 
-  if (loggedIn) {
-    // logged in, show posts by people user is following etc
-    ejs.renderFile(
-      __dirname + "/pages/explore.ejs",
-      { user, loggedIn },
-      (err, str) => {
-        if (err) console.log(err);
-        res.send(str);
-      }
-    );
-  } else {
-    //logged out explore page, show trending posts etc
-    ejs.renderFile(
-      __dirname + "/pages/explore.ejs",
-      { user, loggedIn },
-      (err, str) => {
-        if (err) console.log(err);
-        res.send(str);
-      }
-    );
-  }
+  ejs.renderFile(
+    __dirname + "/pages/explore.ejs",
+    { user, loggedIn, loggedInUser: user },
+    (err, str) => {
+      if (err) console.log(err);
+      res.send(str);
+    }
+  );
 });
 app.get("/settings", checkLoggedIn(), async function (req, res) {
   var user = res.locals.requester,
