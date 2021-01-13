@@ -409,16 +409,17 @@ app.get("/settings", checkLoggedIn(), async function (req, res) {
 app.get("/api/top/users", async (req, res) => {
   // top 10 or something most followed users
   var top = await users.aggregate([
-    {
-      $addFields: {
-        followerCount: { $sum: "$followers" },
-      }
-    },
-    { $sort: { followerCount: -1 } },
+    { $unwind: "$followers" },
+    {"$group": {
+        "_id": "$_id",
+        "name": { "$first": "$name" },
+        "followers": { "$sum": 1 }
+    }},
+    { $sort: { followers: -1 } },
     { $limit: 10 }
   ])
 
-  res.json(top.map(u => ({ id: u._id, name: u.name, followers: u.followers.length })))
+  res.json(top.map(u=>({id:u._id, name:u.name, followers: u.followers})))
 })
 
 app.get("/api/top/posts", async (req, res) => {
@@ -426,7 +427,7 @@ app.get("/api/top/posts", async (req, res) => {
 })
 
 app.get("/api/trending/posts", async (req, res) => {
-  var trending = await posts.find({}, { limit : 5 })
+  var trending = await posts.find({}, { limit: 5 })
   res.json(trending)
 })
 
