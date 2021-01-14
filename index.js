@@ -43,11 +43,11 @@ users.createIndex("name", { unique: true });
   }
 
   var findGhostUser = await users.findOne({ _id: monk.id('000000000000000000000000') })
-  if (ghostUser) {
+  if (findGhostUser) {
     console.log('ghost user found, updating')
     await users.update({ _id: monk.id('000000000000000000000000') }, { $set: ghostUser })
   } else {
-    users.insert(ghost)
+    users.insert(ghostUser)
   }
 })()
 
