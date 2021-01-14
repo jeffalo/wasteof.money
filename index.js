@@ -29,10 +29,11 @@ const users = db.get("users"),
 users.createIndex("name", { unique: true });
 
 const saltRounds = 10;
+const usernameRegex = /^[a-z0-9_\-]{1,20}$/;
 
 var tokens = [];
 
-const usernameRegex = /^[a-z0-9_\-]{1,20}$/;
+app.set('trust proxy', 1);
 
 app.use(
   express.static("static", {
