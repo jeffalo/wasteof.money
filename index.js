@@ -618,6 +618,43 @@ app.get("/users/:user/followers", async function (req, res, next) {
   }
 });
 
+app.get("/api/users/:user/following", async function (req, res, next) {
+  var user = await findUserData(req.params.user);
+  var followingDB = await users.find({ followers: { $all: [user._id.toString()] } })
+  var following = []
+  for (i in followingDB) {
+    var u = await findUserDataByID(followingDB[i]._id);
+    
+    if (u) {
+      following.push({
+        id: u._id,
+        name: u.name
+      })
+    }
+  }
+  following.reverse() // we want the followers in order starting with the newest
+  res.json(following)
+})
+
+app.get("/users/:user/following", async function (req, res, next) {
+  var loggedInUser = res.locals.requester,
+    loggedIn = res.locals.loggedIn,
+    user = await findUserData(req.params.user);
+
+  if (user) {
+    ejs.renderFile(
+      __dirname + "/pages/following.ejs",
+      { user, loggedInUser, loggedIn },
+      (err, str) => {
+        if (err) console.log(err);
+        res.send(str);
+      }
+    );
+  } else {
+    next(); //go to 404
+  }
+});
+
 app.delete("/picture/:user", checkLoggedIn(), async (req, res) => { // 
   var requester = res.locals.requester
   if (!req.xhr) return res.status(403).json({ error: "must be requested with xhr" });
