@@ -47,7 +47,7 @@ export default {
 					),
 					h(
 						"p", {
-							class: ["text-base", "text-gray-600", "leading-normal", "break-words"]
+							class: ["text-base", "text-gray-600", "leading-normal", "wasteof-break-words"]
 						},
 						this.post.content
 					),
