@@ -20,13 +20,37 @@ const app = express();
 var http = require('http').createServer(app);
 var io = require('socket.io')(http);
 
-const db = require("monk")(process.env.DB_URL);
+const monk = require("monk")
+const db = monk(process.env.DB_URL);
 
 //database
 const users = db.get("users"),
   posts = db.get("posts");
 
 users.createIndex("name", { unique: true });
+
+(async () => { // todo: this shouldn't reset ghost's followers/following
+  const ghostUser = {
+    _id: monk.id('000000000000000000000000'),
+    name: "ghost",
+    password: '',
+    followers: [],
+    messages: {
+      unread: [],
+      read: []
+    },
+    verified: true
+  }
+
+  var findGhostUser = await users.findOne({ _id: monk.id('000000000000000000000000') })
+  if (ghostUser) {
+    console.log('ghost user found, updating')
+    await users.update({ _id: monk.id('000000000000000000000000') }, { $set: ghostUser })
+  } else {
+    users.insert(ghost)
+  }
+})()
+
 
 const saltRounds = 10;
 const usernameRegex = /^[a-z0-9_\-]{1,20}$/;
@@ -423,6 +447,9 @@ app.get("/api/trending/posts", async (req, res) => {
     if (poster) {
       trending[i].poster = poster.name;
       trending[i].posterID = poster._id
+    } else {
+      trending[i].poster = 'ghost';
+      trending[i].posterID = '000000000000000000000000'
     }
   }
   res.json(trending)
@@ -543,6 +570,9 @@ app.get("/api/users/:user/posts", async (req, res) => {
     if (poster) {
       userPosts[i].poster = poster.name; // this is inefficent, we know the user will always be the smae, but mongodb is webscale so this won't be an issue
       userPosts[i].posterID = poster._id
+    } else {
+      userPosts[i].poster = 'ghost'
+      userPosts[i].posterID = '000000000000000000000000'
     }
   }
 
@@ -593,6 +623,11 @@ app.get("/api/users/:user/followers", async function (req, res, next) {
         id: u._id,
         name: u.name
       })
+    } else {
+      followers.push({
+        id: '000000000000000000000000',
+        name: 'ghost'
+      })
     }
   }
   followers.reverse() // we want the followers in order starting with the newest
@@ -624,11 +659,16 @@ app.get("/api/users/:user/following", async function (req, res, next) {
   var following = []
   for (i in followingDB) {
     var u = await findUserDataByID(followingDB[i]._id);
-    
+
     if (u) {
       following.push({
         id: u._id,
         name: u.name
+      })
+    } else {
+      following.push({
+        id: '000000000000000000000000',
+        name: 'ghost'
       })
     }
   }
