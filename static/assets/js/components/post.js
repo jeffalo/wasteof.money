@@ -30,7 +30,13 @@ export default {
 							src: "/picture/" + this.post.posterID,
 							height: "30px",
 						},
-						class: ["rounded-full", "h-6", "inline-block", "shadow"]
+						class: ["rounded-full", "h-6", "inline-block", "shadow", "cursor-pointer"],
+				                on: {
+                                                  click: () => {
+                                                    window.location.href = "/users/" + this.post.poster;
+                                                  }
+                                                }						
+                }
 					}),
 					h(
 						"h4", {
@@ -40,8 +46,14 @@ export default {
 								"text-gray-900",
 								"leading-tight",
 								"align-middle",
-								"ml-1"
-							]
+								"ml-1",
+								"cursor-pointer"
+							],
+							on: {
+                                                          click: () => {
+                                                            window.location.href = "/users/" + this.post.poster;
+                                                          }
+                                                        }
 						},
 						"@" + this.post.poster
 					),
