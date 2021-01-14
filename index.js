@@ -74,8 +74,8 @@ app.use(async (req, res, next) => {
 app.use(
   "/api/",
   rateLimit({
-    windowMs: 3600000,
-    max: 100,
+    windowMs: 1000,
+    max: 10,
     handler(req, res) {
       res.status(429).json({ error: "too many request" });
     }
