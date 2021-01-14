@@ -10,7 +10,7 @@
         <% if(loggedIn){ %>
         <input type="hidden" id="loggedInUserID" value="<%= loggedInUser._id %>">
         <% } %>
-        <input type="hidden" id="userName" value="<%= user.name %>">
+        <input type="hidden" id="username" value="<%= user.name %>">
     </div>
     <main class='container mx-auto px-4 mt-24 md:mt-16' id='app' v-cloak>
         <img src="/picture/<%= user._id %>" height="30px" class='rounded-full h-10 inline-block shadow'>
@@ -23,7 +23,7 @@
                 id='follow-text'><%= user.followers.includes(loggedInUser._id.toString())? 'Unfollow' : 'Follow' %></span>
         </button>
         <% } %>
-        <p class="text-gray-700"><a href='#'><span id='follower-count'><%= user.followers ? user.followers.length.toString() : '0' %></span> followers</a> | <a href='#'><span id='following-count'><%= user.following ? user.following.length.toString() : '0' %></span> following</a></p> <!-- todo: make api also find who the user is following -->
+        <p class="text-gray-700"><a :href='`/users/${user}/followers`'><span id='follower-count'><%= user.followers ? user.followers.length.toString() : '0' %></span> followers</a> | <a href='#'><span id='following-count'><%= user.following ? user.following.length.toString() : '0' %></span> following</a></p> <!-- todo: make api also find who the user is following -->
         <p class="text-gray-700 italic">id: <%= user._id %></p>
         <post v-for="post in posts" v-bind:key="post._id" v-bind:post="post" v-bind:logged-in-user-id="loggedInUserID"></post>
         <button v-if='!last' @click="loadMore()" href="/login"
@@ -38,7 +38,7 @@
 <script type="module">
     import Post from "../assets/js/components/post.js";
     console.log('user script loaded')
-    var user = document.getElementById('userName').value //TODO: is there a better way to do this? TODO: clean this the heck up
+    var user = document.getElementById('username').value //TODO: is there a better way to do this? TODO: clean this the heck up
     var userInput = document.getElementById('loggedInUserID')
 
     const urlParams = new URLSearchParams(window.location.search);

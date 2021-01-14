@@ -15,7 +15,7 @@
         <h2 class="font-medium my-2">Top users</h2>
         <div v-for="user in topUsers" class="inline-block font-medium text-gray-800 mx-2">
             <a :href="`/users/${user.name}`">
-                <img :src="`/picture/${user.id}`" height="30px" class='rounded-full h-10 inline-block shadow'><span> {{ user.name }}</span>
+                <img :src="`/picture/${user.id}`" height="30px" class='rounded-full h-10 inline-block shadow'><span class="ml-1"> {{ user.name }}</span>
             </a>
         </div>
         <h2 class="font-medium my-2">Random posts</h2>

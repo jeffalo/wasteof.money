@@ -583,6 +583,41 @@ app.get("/users/:user", async function (req, res, next) {
   }
 });
 
+app.get("/api/users/:user/followers", async function (req, res, next) {
+  var user = await findUserData(req.params.user);
+  var followers = []
+  for (i in user.followers) {
+    var u = await findUserDataByID(user.followers[i]);
+    if (u) {
+      followers.push({
+        id: u._id,
+        name: u.name
+      })
+    }
+  }
+  followers.reverse() // we want the followers in order starting with the newest
+  res.json(followers)
+})
+
+app.get("/users/:user/followers", async function (req, res, next) {
+  var loggedInUser = res.locals.requester,
+    loggedIn = res.locals.loggedIn,
+    user = await findUserData(req.params.user);
+
+  if (user) {
+    ejs.renderFile(
+      __dirname + "/pages/followers.ejs",
+      { user, loggedInUser, loggedIn },
+      (err, str) => {
+        if (err) console.log(err);
+        res.send(str);
+      }
+    );
+  } else {
+    next(); //go to 404
+  }
+});
+
 app.delete("/picture/:user", checkLoggedIn(), async (req, res) => { // 
   var requester = res.locals.requester
   if (!req.xhr) return res.status(403).json({ error: "must be requested with xhr" });
