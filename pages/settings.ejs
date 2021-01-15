@@ -21,7 +21,7 @@
             </div>
             <label for="username">Username: </label>
             <input
-              oninput="this.value=this.value.toLowerCase().replace(/[^a-z1-9_-]/, '');"
+              oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9_-]/, '');"
               class="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:shadow-outline-blue focus:border-blue-300 focus:z-10 sm:text-sm sm:leading-5"
               name="username" type='text' id="username" value="<%= user.name %>">
             <p class="my-2 text-gray-500">Note that changing your username may have <a
