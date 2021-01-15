@@ -817,51 +817,32 @@ app.post("/post", checkLoggedIn(), async function (req, res) {
 app.post("/posts/:id/love", checkLoggedIn(), async function (req, res) {
   var user = res.locals.requester;
   if (req.xhr) {
-    try {
-      posts
-        .findOne({ _id: req.params.id })
-        .then(post => {
-          if (post) {
-            var loves = post.loves || [];
-            if (!loves.includes(user._id.toString())) {
-              loves.push(user._id.toString());
-              posts
-                .update({ _id: req.params.id }, { $set: { loves: loves } })
-                .then(() => {
-                  res.json({ ok: "loved post", loves: loves, action: "love" });
-                })
-                .catch(updateerr => {
-                  console.log(updateerr);
-                  res.status(500).json({
-                    error: "uncaught database error: " + updateerr.code
-                  }); // todo: don't do this on prod.
-                });
-            } else {
-              loves = loves.filter(i => i !== user._id.toString());
-              posts
-                .update({ _id: req.params.id }, { $set: { loves: loves } })
-                .then(() => {
-                  res.json({ ok: "unloved", loves: loves, action: "unlove" });
-                })
-                .catch(updateerr => {
-                  console.log(updateerr);
-                  res.status(500).json({
-                    error: "uncaught database error: " + updateerr.code
-                  }); // todo: don't do this on prod.
-                });
+    await posts.update({ _id: req.params.id }, [{
+      $set: {
+        loves: {
+          $cond: [
+            {
+              $in: [user._id.toString(), "$loves"]
+            },
+            {
+              $setDifference: ["$loves", [user._id.toString()]]
+            },
+            {
+              $concatArrays: ["$loves", [user._id.toString()]]
             }
-          } else {
-            res.json({ eror: "post not found" });
-          }
-        })
-        .catch(err => {
-          res
-            .status(500)
-            .json({ error: "uncaught database error: " + err.code }); // todo: don't do this on prod.
-        });
-    } catch (error) {
-      console.log(error);
-      res.status(500).json({ error: "oops something went wrong" });
+          ]
+        }
+      }
+    }])
+    var postDB = await posts.findOne({_id:req.params.id})
+    if (postDB) {
+      if (postDB.loves.includes(user._id.toString())) {
+        res.json({ ok: "loved post", loves: postDB.loves, action: "love" });
+      } else {
+        res.json({ ok: "unloved", loves: postDB.loves, action: "unlove" });
+      }
+    } else {
+      res.status(404).json({ error: "no post found" });
     }
   } else {
     res.status(403).json({ error: "must be requested with xhr" });
@@ -889,9 +870,9 @@ app.post("/users/:name/follow", checkLoggedIn(), async function (req, res) {
       }
     }])
     var userDB = await findUserData(req.params.name)
-    if(userDB){
+    if (userDB) {
       var following = await users.find({ followers: { $all: [userDB._id.toString()] } })
-      if(userDB.followers.includes(user._id.toString())){
+      if (userDB.followers.includes(user._id.toString())) {
         res.json({
           ok: "now following",
           action: "follow",
