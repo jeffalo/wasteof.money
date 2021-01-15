@@ -765,7 +765,7 @@ app.get("/api/posts/:post", async function (req, res) {
   try {
     var post = await posts.findOne({ _id: req.params.post }),
       poster = await findUserDataByID(post.poster)
-      //comments = await comments.find({post: post._id}) // TODO: limit this and paginate
+    //comments = await comments.find({post: post._id}) // TODO: limit this and paginate
     post.poster = poster.name;
     post.posterID = poster._id;
     res.json(post);
@@ -779,7 +779,7 @@ app.get("/posts/:post", async function (req, res, next) {
     post = await posts.findOne({ _id: req.params.post }),
     poster = await findUserDataByID(post.poster),
     loggedIn = res.locals.loggedIn;
-  if(post){
+  if (post) {
     ejs.renderFile(
       __dirname + "/pages/post.ejs",
       { post, poster, loggedInUser, loggedIn },
@@ -871,61 +871,44 @@ app.post("/posts/:id/love", checkLoggedIn(), async function (req, res) {
 app.post("/users/:name/follow", checkLoggedIn(), async function (req, res) {
   var user = res.locals.requester;
   if (req.xhr) {
-    var followUser = await findUserData(req.params.name);
-    if (followUser) {
-
-      var followers = followUser.followers || [];
-      if (followers.includes(user._id.toString())) {
-        //already follower, unfollow
-        followers = followers.filter(i => i !== user._id.toString());
-
-        try {
-          await users.update(
-            { name: followUser.name },
-            { $set: { followers } }
-          );
-
-          var following = await users.find({ followers: { $all: [followUser._id.toString()] } })
-
-
-          res.json({
-            ok: "unfollowing",
-            action: "unfollow",
-            followers: followers.length,
-            following: following.length,
-          });
-        } catch (error) {
-          console.log(error);
-          res
-            .status(500)
-            .json({ error: "uncaught database error: " + error.code }); // todo: don't do this on prod.
+    await users.update({ name: req.params.name }, [{
+      $set: {
+        followers: {
+          $cond: [
+            {
+              $in: [user._id.toString(), "$followers"]
+            },
+            {
+              $setDifference: ["$followers", [user._id.toString()]]
+            },
+            {
+              $concatArrays: ["$followers", [user._id.toString()]]
+            }
+          ]
         }
+      }
+    }])
+    var userDB = await findUserData(req.params.name)
+    if(userDB){
+      var following = await users.find({ followers: { $all: [userDB._id.toString()] } })
+      if(userDB.followers.includes(user._id.toString())){
+        res.json({
+          ok: "now following",
+          action: "follow",
+          followers: userDB.followers.length,
+          following: following.length,
+        });
+        addMessage(
+          userDB.name,
+          `<a href='/users/${user.name}'>@${user.name}</a> is now following you.`
+        );
       } else {
-        //follow
-        try {
-          await users.update(
-            { name: followUser.name },
-            { $push: { followers: user._id.toString() } }
-          );
-          addMessage(
-            followUser.name,
-            `<a href='/users/${user.name}'>@${user.name}</a> is now following you.`
-          );
-
-          var following = await users.find({ followers: { $all: [followUser._id.toString()] } })
-
-          res.json({
-            ok: "now following",
-            action: "follow",
-            followers: followers.length + 1,
-            following: following.length,
-          });
-        } catch (error) {
-          console.log(error);
-          res
-            .status(500)
-            .json({ error: "uncaught database error: " + error.code }); // todo: don't do this on prod.
-        }
+        res.json({
+          ok: "unfollowing",
+          action: "unfollow",
+          followers: userDB.followers.length,
+          following: following.length,
+        });
       }
     } else {
       res.status(404).json({ error: "no user found" });
