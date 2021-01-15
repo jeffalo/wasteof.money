@@ -463,7 +463,7 @@ app.get("/api/following/posts", checkLoggedIn(), async (req, res) => {
   var page = parseInt(req.query.page) || 1;
 
   var following = await users.find({ followers: { $all: [user._id.toString()] } })
-  var postsByFollowing = await posts.find({ poster: { $in: following.map(f => f._id) } }, { sort: { time: -1, _id: -1 }, limit:15, skip:(page-1)*10 } );
+  var postsByFollowing = await posts.find({ poster: { $in: following.map(f => f._id) } }, { sort: { time: -1, _id: -1 }, limit:15, skip:(page-1)*15 } );
 
   for (var i in postsByFollowing) {
     var poster = await findUserDataByID(postsByFollowing[i].poster);
@@ -475,8 +475,11 @@ app.get("/api/following/posts", checkLoggedIn(), async (req, res) => {
       postsByFollowing[i].posterID = '000000000000000000000000'
     }
   }
+  var last = false
+  var nextPosts = await posts.find({ poster: { $in: following.map(f => f._id) } }, { sort: { time: -1, _id: -1 }, limit:15, skip:(page)*15 } );
+  if(nextPosts.length == 0) last = true // if there are no posts on the next page, then there must not any more pages, thus this is the last page, i figured this out by my self cool eyes emoji
 
-  res.json({ posts: postsByFollowing });
+  res.json({ posts: postsByFollowing, last });
 })
 
 app.get("/api/messages", checkLoggedIn(), async (req, res) => {
@@ -583,11 +586,13 @@ app.get("/api/users/:user", async (req, res) => {
 //TODO: user follower api
 
 app.get("/api/users/:user/posts", async (req, res) => {
-  var user = await findUserData(req.params.user),
-    userPosts = await posts.find(
+  var user = await findUserData(req.params.user)
+  var page = parseInt(req.query.page) || 1;
+
+  var userPosts = await posts.find(
       { poster: user._id },
-      { sort: { time: -1, _id: -1 } }
-    ); //sort by time but fallback to id
+      { sort: { time: -1, _id: -1 }, limit:15, skip:(page-1)*15 }
+  ); //sort by time but fallback to id
 
   for (var i in userPosts) {
     var poster = await findUserDataByID(userPosts[i].poster);
@@ -599,16 +604,14 @@ app.get("/api/users/:user/posts", async (req, res) => {
       userPosts[i].posterID = '000000000000000000000000'
     }
   }
-
-  var page = parseInt(req.query.page) || 1;
-  if (user) {
-    var pagePosts = paginate(userPosts, 15, page),
-      last = false;
-    if (paginate(userPosts, 15, page + 1).length == 0) last = true; //set last to true if this is the last page
-    res.json({ posts: pagePosts, last });
-  } else {
-    res.status(404).json({ error: "no user found" });
-  }
+   
+  var last = false
+  var nextPosts = await posts.find(
+    { poster: user._id },
+    { sort: { time: -1, _id: -1 }, limit:15, skip:(page)*15 }
+  );
+  if(nextPosts.length == 0) last = true // if there are no posts on the next page, then there must not any more pages, thus this is the last page, i figured this out by my self cool eyes emoji
+  res.json({ posts: userPosts, last });
 });
 
 app.get("/api/users/:user/posts/:post", async (req, res) => {
