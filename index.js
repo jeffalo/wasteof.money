@@ -45,7 +45,7 @@ users.createIndex("name", { unique: true });
 
   var findGhostUser = await users.findOne({ _id: monk.id('000000000000000000000000') })
   if (findGhostUser) {
-    console.log('ghost user found, updating')
+    //console.log('ghost user found, updating')
     await users.update({ _id: monk.id('000000000000000000000000') }, { $set: ghostUser })
   } else {
     users.insert(ghostUser)
@@ -463,7 +463,7 @@ app.get("/api/following/posts", checkLoggedIn(), async (req, res) => {
   var page = parseInt(req.query.page) || 1;
 
   var following = await users.find({ followers: { $all: [user._id.toString()] } })
-  var postsByFollowing = await posts.find({ poster: { $in: following.map(f => f._id) } }, { sort: { time: -1, _id: -1 }, limit:15, skip:(page-1)*15 } );
+  var postsByFollowing = await posts.find({ poster: { $in: following.map(f => f._id) } }, { sort: { time: -1, _id: -1 }, limit: 15, skip: (page - 1) * 15 });
 
   for (var i in postsByFollowing) {
     var poster = await findUserDataByID(postsByFollowing[i].poster);
@@ -476,8 +476,8 @@ app.get("/api/following/posts", checkLoggedIn(), async (req, res) => {
     }
   }
   var last = false
-  var nextPosts = await posts.find({ poster: { $in: following.map(f => f._id) } }, { sort: { time: -1, _id: -1 }, limit:15, skip:(page)*15 } );
-  if(nextPosts.length == 0) last = true // if there are no posts on the next page, then there must not any more pages, thus this is the last page, i figured this out by my self cool eyes emoji
+  var nextPosts = await posts.find({ poster: { $in: following.map(f => f._id) } }, { sort: { time: -1, _id: -1 }, limit: 15, skip: (page) * 15 });
+  if (nextPosts.length == 0) last = true // if there are no posts on the next page, then there must not any more pages, thus this is the last page, i figured this out by my self cool eyes emoji
 
   res.json({ posts: postsByFollowing, last });
 })
@@ -590,8 +590,8 @@ app.get("/api/users/:user/posts", async (req, res) => {
   var page = parseInt(req.query.page) || 1;
 
   var userPosts = await posts.find(
-      { poster: user._id },
-      { sort: { time: -1, _id: -1 }, limit:15, skip:(page-1)*15 }
+    { poster: user._id },
+    { sort: { time: -1, _id: -1 }, limit: 15, skip: (page - 1) * 15 }
   ); //sort by time but fallback to id
 
   for (var i in userPosts) {
@@ -604,13 +604,13 @@ app.get("/api/users/:user/posts", async (req, res) => {
       userPosts[i].posterID = '000000000000000000000000'
     }
   }
-   
+
   var last = false
   var nextPosts = await posts.find(
     { poster: user._id },
-    { sort: { time: -1, _id: -1 }, limit:15, skip:(page)*15 }
+    { sort: { time: -1, _id: -1 }, limit: 15, skip: (page) * 15 }
   );
-  if(nextPosts.length == 0) last = true // if there are no posts on the next page, then there must not any more pages, thus this is the last page, i figured this out by my self cool eyes emoji
+  if (nextPosts.length == 0) last = true // if there are no posts on the next page, then there must not any more pages, thus this is the last page, i figured this out by my self cool eyes emoji
   res.json({ posts: userPosts, last });
 });
 
@@ -788,9 +788,8 @@ app.get("/picture/:user", async function (req, res, next) {
 
 app.get("/api/posts/:post", async function (req, res) {
   try {
-    var post = await posts.findOne({ _id: req.params.post }),
-      poster = await findUserDataByID(post.poster)
-    //comments = await comments.find({post: post._id}) // TODO: limit this and paginate
+    var post = await posts.findOne({ _id: req.params.post })
+    var poster = await findUserDataByID(post.poster)
     post.poster = poster.name;
     post.posterID = poster._id;
     res.json(post);
@@ -799,7 +798,41 @@ app.get("/api/posts/:post", async function (req, res) {
   }
 });
 
+app.get("/api/posts/:post/comments", async function (req, res) {
+  var post = await posts.findOne({ _id: req.params.post })
+
+  var page = parseInt(req.query.page) || 1;
+
+  var postComments = await comments.find(
+    { post: post._id },
+    { sort: { time: -1, _id: -1 }, limit: 15, skip: (page - 1) * 15 }
+  );
+
+  for (var i in postComments) {
+    var poster = await findUserDataByID(postComments[i].poster);
+    postComments[i].poster = {};
+    if (poster) {
+      postComments[i].poster.name = poster.name;
+      postComments[i].poster.id = poster._id;
+    } else {
+      postComments[i].poster.name = 'ghost'
+      postComments[i].poster.id = '000000000000000000000000'
+    }
+  }
+
+  var last = false
+  var nextComments = await comments.find(
+    { post: post._id },
+    { sort: { time: -1, _id: -1 }, limit: 15, skip: (page) * 15 }
+  );
+
+  if (nextComments.length == 0) last = true
+
+  res.json({comments:postComments, last})
+})
+
 app.get("/posts/:post", async function (req, res, next) {
+  if(req.params.post.length !== 24) return next()
   var loggedInUser = res.locals.requester,
     loggedIn = res.locals.loggedIn,
     post = await posts.findOne({ _id: req.params.post });
@@ -961,6 +994,7 @@ io.on('connection', async (socket) => {
 
 app.use((req, res, next) => {
   // 404 page always last
+  console.log(`404 at ${req.path}`)
   var user = res.locals.requester,
     loggedIn = res.locals.loggedIn;
   res.status(404).send(

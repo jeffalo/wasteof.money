@@ -15,12 +15,26 @@
     <main class='container mx-auto px-4 mt-24 md:mt-16' id='app' v-cloak>
         <post :post="post" :logged-in-user-id="loggedInUserID"></post>
         <div class="mx-auto max-w-2xl">
-            <h1 class="text-base block">Comments ({{ comments.length }})</h1>
+            <h1 class="text-base block">Comments ({{ comments.comments.length }})</h1>
             <form @submit.prevent="comment(commentInput)">
                 <input
                 class="appearance-none relative inline-block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:shadow-outline-blue focus:border-blue-300 focus:z-10 sm:text-sm sm:leading-5"
                 type='text' placeholder="Write a comment" v-model="commentInput">
             </form>
+            <div v-for="comment in comments.comments" :key="comment._id" class="p-4 my-5 bg-white rounded-lg shadow">
+                <div class="block align-middle">
+                    <img src="/picture/5fe24f5e66e21f46f4f1c639" height="30px" class="rounded-full h-6 inline-block shadow">
+                    <h4 class="inline-block text-lg text-gray-900 leading-tight ml-1">
+                        @jeffalo
+                    </h4>
+                    <span class="inline-block ml-2 text-base text-gray-500 italic leading-normal">
+                        1/15/2021 7:49:27 PM
+                    </span>
+                </div>
+                <p class="text-base text-gray-600 leading-normal wasteof-break-words block">
+                    {{ comment.content }}
+                </p>
+            </div>
         </div>
     </main>
 </body>
@@ -39,7 +53,9 @@
             post: {
                 loves: []
             },
-            comments: [],
+            comments: {
+                comments: []
+            },
             commentInput:'',
             postID,
             loggedInUserID
@@ -48,9 +64,13 @@
             Post // this is much cleaner than doing Vue.component(...)
         },
         async mounted() {
-            var res = await fetch(`/api/posts/${this.postID}`)
-            var data = await res.json()
-            this.post = data
+            var postRes = await fetch(`/api/posts/${this.postID}`)
+            var postData = await postRes.json()
+            this.post = postData
+
+            var commentsRes = await fetch(`/api/posts/${this.postID}/comments`)
+            var commentsData = await commentsRes.json()
+            this.comments = commentsData
         },
         methods: {
             lovePost: async function (id) {

@@ -14,9 +14,9 @@ export default {
 		return new Date(this.post.time).toLocaleDateString("en-US") + " " + new Date(this.post.time).toLocaleTimeString("en-US") + " - " + this.post._id
     }
   },
-	template: `
-<a :href="'/posts/'+post._id" class="font-normal text-black">
-	<div class="max-w-2xl flex p-6 mx-auto my-5 bg-white rounded-lg shadow-md" :class="{'bg-indigo-100': post.highlight}">
+	template: 
+`
+<div class="max-w-2xl flex p-6 mx-auto my-5 bg-white rounded-lg shadow-md" :class="{'bg-indigo-100': post.highlight}">
 	<div class="pt-1">
 		<a :href="'/users/'+post.poster" class="font-normal">
 			<img :src="'/picture/' + post.posterID" height="30px" class="rounded-full h-6 inline-block shadow"/>
@@ -27,9 +27,11 @@ export default {
 		<p class="text-base text-gray-600 leading-normal wasteof-break-words">
 			{{ post.content }}
 		</p>
-		<p class="text-base text-gray-500 italic leading-normal">
-			{{ postIdInfo }}
-		</p>
+		<a :href="'/posts/'+post._id" class="font-normal text-black">
+			<p class="text-base text-gray-500 italic leading-normal">
+				{{ postIdInfo }}
+			</p>
+		</a>
 		<div>
 			<span
 				@click="onclick"
@@ -40,7 +42,6 @@ export default {
 			<span :data-post-count-id="post._id">{{ post.loves.length }}</span>
 		</div>
 	</div>
-	</div>
-</a>
+</div>
 `
 }
