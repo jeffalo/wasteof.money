@@ -457,6 +457,28 @@ app.get("/api/trending/posts", async (req, res) => {
   res.json(trending)
 })
 
+app.get("/api/following/posts", checkLoggedIn(), async (req, res) => {
+  // give posts by people the loggedIn user is following
+  var user = res.locals.requester
+  var page = parseInt(req.query.page) || 1;
+
+  var following = await users.find({ followers: { $all: [user._id.toString()] } })
+  var postsByFollowing = await posts.find({ poster: { $in: following.map(f => f._id) } }, { sort: { time: -1, _id: -1 }, limit:15, skip:(page-1)*10 } );
+
+  for (var i in postsByFollowing) {
+    var poster = await findUserDataByID(postsByFollowing[i].poster);
+    if (poster) {
+      postsByFollowing[i].poster = poster.name;
+      postsByFollowing[i].posterID = poster._id
+    } else {
+      postsByFollowing[i].poster = 'ghost'
+      postsByFollowing[i].posterID = '000000000000000000000000'
+    }
+  }
+
+  res.json({ posts: postsByFollowing });
+})
+
 app.get("/api/messages", checkLoggedIn(), async (req, res) => {
   var user = res.locals.requester,
     page = parseInt(req.query.page) || 1;
@@ -836,7 +858,7 @@ app.post("/posts/:id/love", checkLoggedIn(), async function (req, res) {
         }
       }
     }])
-    var postDB = await posts.findOne({_id:req.params.id})
+    var postDB = await posts.findOne({ _id: req.params.id })
     if (postDB) {
       if (postDB.loves.includes(user._id.toString())) {
         res.json({ ok: "loved post", loves: postDB.loves, action: "love" });
