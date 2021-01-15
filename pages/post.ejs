@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<%- include('../partials/head.ejs', {page: post.content, vue: true}); %>
+
+
+<body class='bg-gray-100'>
+    <%- include('../partials/nav.ejs', {active: "post_" +post._id, user:loggedInUser, loggedIn}); %>
+    <div id='data' class='hidden'>
+        <% if(loggedIn){ %>
+            <input type="hidden" id="loggedInUserID" value="<%= loggedInUser._id %>">
+        <% } %>
+        <input type="hidden" id="postID" value="<%= post._id %>">
+    </div>
+    <main class='container mx-auto px-4 mt-24 md:mt-16' id='app' v-cloak>
+        <post :post="post" :logged-in-user-id="loggedInUserID"></post>
+        <div class="mx-auto max-w-2xl">
+            <h1 class="text-base block">Comments ({{ comments.length }})</h1>
+            <form @submit.prevent="comment(commentInput)">
+                <input
+                class="appearance-none relative inline-block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:shadow-outline-blue focus:border-blue-300 focus:z-10 sm:text-sm sm:leading-5"
+                type='text' placeholder="Write a comment" v-model="commentInput">
+            </form>
+        </div>
+    </main>
+</body>
+<%- include('../partials/scripts.ejs'); %>
+<script src="/assets/js/love.js"></script>
+<script type="module">
+    import Post from "../assets/js/components/post.js";
+
+    var postID = document.getElementById('postID').value //TODO: is there a better way to do this? TODO: clean this the heck up
+    var loggedInUserIDInput = document.getElementById('loggedInUserID')
+
+    if (loggedInUserIDInput) var loggedInUserID = loggedInUserIDInput.value
+    var app = new Vue({
+        el: '#app',
+        data: {
+            post: {
+                loves: []
+            },
+            comments: [],
+            commentInput:'',
+            postID,
+            loggedInUserID
+        },
+        components: {
+            Post // this is much cleaner than doing Vue.component(...)
+        },
+        async mounted() {
+            var res = await fetch(`/api/posts/${this.postID}`)
+            var data = await res.json()
+            this.post = data
+        },
+        methods: {
+            lovePost: async function (id) {
+                love(id, (newLoves, action) => {
+                    this.post.loves = newLoves
+                })
+            },
+            comment: function(input){
+                alert(input)
+            }
+        }
+    })
+</script>
+</html>

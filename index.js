@@ -25,7 +25,8 @@ const db = monk(process.env.DB_URL);
 
 //database
 const users = db.get("users"),
-  posts = db.get("posts");
+  posts = db.get("posts"),
+  comments = db.get("comments")
 
 users.createIndex("name", { unique: true });
 
@@ -404,6 +405,7 @@ app.get("/explore", async function (req, res) {
     }
   );
 });
+
 app.get("/settings", checkLoggedIn(), async function (req, res) {
   var user = res.locals.requester,
     loggedIn = res.locals.loggedIn;
@@ -757,13 +759,13 @@ app.get("/picture/:user", async function (req, res, next) {
     res.set("Content-Type", "image/png");
     res.send(file);
   }
-
 });
 
 app.get("/api/posts/:post", async function (req, res) {
   try {
     var post = await posts.findOne({ _id: req.params.post }),
-      poster = await findUserDataByID(post.poster);
+      poster = await findUserDataByID(post.poster)
+      //comments = await comments.find({post: post._id}) // TODO: limit this and paginate
     post.poster = poster.name;
     post.posterID = poster._id;
     res.json(post);
@@ -773,12 +775,19 @@ app.get("/api/posts/:post", async function (req, res) {
 });
 
 app.get("/posts/:post", async function (req, res, next) {
-  try {
-    var post = await posts.findOne({ _id: req.params.post }),
-      poster = await findUserDataByID(post.poster);
-    res.redirect(`/users/${poster.name}?post=${post._id}`);
-  } catch {
-    next(); //404
+  var loggedInUser = res.locals.requester,
+    post = await posts.findOne({ _id: req.params.post }),
+    poster = await findUserDataByID(post.poster),
+    loggedIn = res.locals.loggedIn;
+  if(post){
+    ejs.renderFile(
+      __dirname + "/pages/post.ejs",
+      { post, poster, loggedInUser, loggedIn },
+      (err, str) => {
+        if (err) console.log(err);
+        res.send(str);
+      }
+    );
   }
 });
 

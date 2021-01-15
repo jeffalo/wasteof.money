@@ -39,12 +39,12 @@
     import Post from "../assets/js/components/post.js";
     console.log('user script loaded')
     var user = document.getElementById('username').value //TODO: is there a better way to do this? TODO: clean this the heck up
-    var userInput = document.getElementById('loggedInUserID')
+    var loggedInUserIDInput = document.getElementById('loggedInUserID')
 
     const urlParams = new URLSearchParams(window.location.search);
     const onePost = urlParams.get('post');
 
-    if (userInput) var loggedInUserID = userInput.value
+    if (loggedInUserIDInput) var loggedInUserID = loggedInUserIDInput.value
     var app = new Vue({
         el: '#app',
         components: {
