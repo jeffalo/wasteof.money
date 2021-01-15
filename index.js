@@ -776,10 +776,10 @@ app.get("/api/posts/:post", async function (req, res) {
 
 app.get("/posts/:post", async function (req, res, next) {
   var loggedInUser = res.locals.requester,
-    post = await posts.findOne({ _id: req.params.post }),
-    poster = await findUserDataByID(post.poster),
-    loggedIn = res.locals.loggedIn;
+    loggedIn = res.locals.loggedIn,
+    post = await posts.findOne({ _id: req.params.post });
   if (post) {
+    var poster = await findUserDataByID(post.poster)
     ejs.renderFile(
       __dirname + "/pages/post.ejs",
       { post, poster, loggedInUser, loggedIn },
@@ -788,6 +788,8 @@ app.get("/posts/:post", async function (req, res, next) {
         res.send(str);
       }
     );
+  } else {
+    next()
   }
 });
 
