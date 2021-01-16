@@ -13,7 +13,7 @@
         <input type="hidden" id="username" value="<%= user.name %>">
         <input type="hidden" id="userID" value="<%= user._id %>">
     </div>
-    <main class='container mx-auto px-4 mt-24 md:mt-16' id='app' v-cloak>
+    <main class='container mx-auto px-4 mt-28 md:mt-16' id='app' v-cloak>
         <div class="bg-white text-gray-700 p-5 rounded-xl">
             <h1 class="mb-5"><a :href="`/users/${user}`"><img :src="`/picture/${userID}`" height="30px" class='rounded-full h-10 inline-block shadow'> @{{ user }}</a> » followers ({{ followers.length }})</h1>
             <div class="grid grid-cols-3 gap-4 ">

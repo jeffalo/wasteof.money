@@ -12,7 +12,7 @@
         <% } %>
         <input type="hidden" id="postID" value="<%= post._id %>">
     </div>
-    <main class='container mx-auto px-4 mt-24 md:mt-16' id='app' v-cloak>
+    <main class='container mx-auto px-4 mt-28 md:mt-16' id='app' v-cloak>
         <post :post="post" :logged-in-user-id="loggedInUserID"></post>
         <div class="mx-auto max-w-2xl">
             <h1 class="text-base block">Comments ({{ comments.comments.length }})</h1>

@@ -12,7 +12,7 @@
         <% } %>
         <input type="hidden" id="username" value="<%= user.name %>">
     </div>
-    <main class='container mx-auto px-4 mt-24 md:mt-16' id='app' v-cloak>
+    <main class='container mx-auto px-4 mt-28 md:mt-16' id='app' v-cloak>
         <img src="/picture/<%= user._id %>" height="30px" class='rounded-full h-10 inline-block shadow'>
         <h1 class="text-base">@<%= user.name %> <% if(user.verified) {%><span class="iconify inline-block mr-1 text-indigo-600" data-icon="uil:check-circle" data-inline="true"></span><% } %></h1>
         <% if(loggedInUser) { %>
