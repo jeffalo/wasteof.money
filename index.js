@@ -24,9 +24,10 @@ const monk = require("monk")
 const db = monk(process.env.DB_URL);
 
 //database
-const users = db.get("users"),
-  posts = db.get("posts"),
-  comments = db.get("comments")
+const users = db.get("users")
+const posts = db.get("posts")
+const comments = db.get("comments")
+const messages = db.get("messages")
 
 users.createIndex("name", { unique: true });
 
@@ -483,53 +484,40 @@ app.get("/api/following/posts", checkLoggedIn(), async (req, res) => {
 })
 
 app.get("/api/messages", checkLoggedIn(), async (req, res) => {
-  var user = res.locals.requester,
-    page = parseInt(req.query.page) || 1;
+  var user = res.locals.requester
+  var page = parseInt(req.query.page) || 1
 
-  var unread = user.messages.unread // don't paginate unread messages?
+  var msgs = await messages.find(
+    { to: user._id.toString() },
+    { sort: { time: -1, _id: -1 }, limit: 15, skip: (page - 1) * 15 }
+  )
 
-  var read = user.messages.read
-
-  unread = unread.sort(function (x, y) {
-    return y.time - x.time;
-  });
-
-  read = read.sort(function (x, y) {
-    return y.time - x.time;
-  });
-
-  read = paginate(read, 15, page)
-
-  var last = false;
-
-  if (paginate(user.messages.read, 15, page + 1).length == 0) last = true; //set last to true if this is the last page
-  var messages = {
-    unread,
-    read,
-    last
-  };
-
-  res.json(messages);
+  var last = false
+  var nextMsgs = await messages.find(
+    { to: user._id.toString() },
+    { sort: { time: -1, _id: -1 }, limit: 15, skip: (page) * 15 }
+  );
+  if (nextMsgs.length == 0) last = true
+  var unread = msgs.filter(m=>m.read == false)
+  var read = msgs.filter(m=>m.read == true)
+  res.json({unread, read, last});
 });
 
 app.get("/api/messages/count", checkLoggedIn(), async (req, res) => {
-  var user = res.locals.requester,
-    messages = user.messages;
-  res.json({ count: messages.unread.length });
+  var user = res.locals.requester
+  var msgs = await messages.find({ to: user._id.toString(), read: false })
+  res.json({ count: msgs.length })
 });
 
 app.post("/api/messages/read", checkLoggedIn(), async (req, res) => {
   var user = res.locals.requester;
 
   if (req.xhr) {
-    var messages = user.messages;
-    messages.read = messages.read.concat(messages.unread);
-    messages.unread = [];
     try {
-      await users.update({ name: user.name }, { $set: { messages } });
+      await messages.update({ to: user._id.toString(), read: false }, { $set: { read: true } }, { multi:true })
       var sockets = findSocketsByID(user._id)
       sockets.forEach(s => {
-        s.socket.emit('updateMessageCount', messages.unread.length)
+        s.socket.emit('updateMessageCount', 0)
       })
       res.json({ ok: "cleared messages" });
     } catch (error) {
@@ -828,11 +816,11 @@ app.get("/api/posts/:post/comments", async function (req, res) {
 
   if (nextComments.length == 0) last = true
 
-  res.json({comments:postComments, last})
+  res.json({ comments: postComments, last })
 })
 
 app.get("/posts/:post", async function (req, res, next) {
-  if(req.params.post.length !== 24) return next()
+  if (req.params.post.length !== 24) return next()
   var loggedInUser = res.locals.requester,
     loggedIn = res.locals.loggedIn,
     post = await posts.findOne({ _id: req.params.post });
@@ -980,7 +968,8 @@ io.on('connection', async (socket) => {
     var tokenUser = findUser(cookies.token)
     if (tokenUser) {
       var user = await findUserDataByID(tokenUser.id)
-
+      var msgs = await messages.find({ to: user._id.toString(), read: false })
+      socket.emit('updateMessageCount', msgs.length)
       connected.push({
         id: user._id.toString(),
         socket: socket
@@ -1052,19 +1041,27 @@ function findSocketsByID(id) {
 function addMessage(name, text, time = Date.now()) {
   return new Promise(async (resolve, reject) => {
     try {
-      var user = await findUserData(name),
-        messages = user.messages;
+      var user = await findUserData(name)
 
-      messages.unread.push({
-        content: text,
-        time
-      });
-      var update = await users.update({ name: name }, { $set: { messages } });
-      var sockets = findSocketsByID(user._id)
-      sockets.forEach(s => {
-        s.socket.emit('updateMessageCount', messages.unread.length)
-      })
-      resolve(update);
+      if (user) {
+        const message = {
+          content: text,
+          to: user._id.toString(),
+          read: false,
+          time
+        }
+
+        var update = await messages.insert(message)
+
+        var msgs = await messages.find({ to: user._id.toString(), read: false })
+        var sockets = findSocketsByID(user._id)
+        sockets.forEach(s => {
+          s.socket.emit('updateMessageCount', msgs.length)
+        })
+        resolve(update);
+      } else {
+        reject('no user found')
+      }
     } catch (error) {
       reject(Error(error));
     }

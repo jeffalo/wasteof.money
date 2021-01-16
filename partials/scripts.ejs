@@ -15,7 +15,6 @@
     var messageCount = document.getElementById('message-count')
 
     socket.on('updateMessageCount', (count) => {
-
         if(count == 0){
             messageCount.classList.remove('flex')
             messageCount.classList.add('hidden')
@@ -23,7 +22,6 @@
             messageCount.classList.remove('hidden')
             messageCount.classList.add('flex')
         }
-        
         document.getElementById('message-count').innerText = count
     })
 </script>
