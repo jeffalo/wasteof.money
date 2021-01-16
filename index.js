@@ -37,10 +37,6 @@ users.createIndex("name", { unique: true });
     name: "ghost",
     password: '',
     followers: [],
-    messages: {
-      unread: [],
-      read: []
-    },
     verified: true
   }
 
@@ -312,11 +308,7 @@ app.post(
             .insert({
               name: username,
               password: hashedPassword,
-              followers: [],
-              messages: {
-                unread: [],
-                read: []
-              }
+              followers: []
             })
             .then(user => {
               console.log(user);
