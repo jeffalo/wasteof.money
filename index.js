@@ -439,12 +439,13 @@ app.get("/api/trending/posts", async (req, res) => {
   var trending = await posts.aggregate([{ $sample: { size: 10 } }])
   for (var i in trending) {
     var poster = await findUserDataByID(trending[i].poster);
+    trending[i].poster = {}
     if (poster) {
-      trending[i].poster = poster.name;
-      trending[i].posterID = poster._id
+      trending[i].poster.name = poster.name;
+      trending[i].poster.id = poster._id
     } else {
-      trending[i].poster = 'ghost';
-      trending[i].posterID = '000000000000000000000000'
+      trending[i].poster.name = 'ghost';
+      trending[i].poster.id = '000000000000000000000000'
     }
   }
   res.json(trending)
@@ -460,12 +461,13 @@ app.get("/api/following/posts", checkLoggedIn(), async (req, res) => {
 
   for (var i in postsByFollowing) {
     var poster = await findUserDataByID(postsByFollowing[i].poster);
+    postsByFollowing[i].poster = {}
     if (poster) {
-      postsByFollowing[i].poster = poster.name;
-      postsByFollowing[i].posterID = poster._id
+      postsByFollowing[i].poster.name = poster.name;
+      postsByFollowing[i].poster.id = poster._id
     } else {
-      postsByFollowing[i].poster = 'ghost'
-      postsByFollowing[i].posterID = '000000000000000000000000'
+      postsByFollowing[i].poster.name = 'ghost'
+      postsByFollowing[i].poster.id = '000000000000000000000000'
     }
   }
   var last = false
@@ -576,12 +578,13 @@ app.get("/api/users/:user/posts", async (req, res) => {
 
   for (var i in userPosts) {
     var poster = await findUserDataByID(userPosts[i].poster);
+    userPosts[i].poster = {}
     if (poster) {
-      userPosts[i].poster = poster.name; // this is inefficent, we know the user will always be the smae, but mongodb is webscale so this won't be an issue
-      userPosts[i].posterID = poster._id
+      userPosts[i].poster.name = poster.name; // this is inefficent, we know the user will always be the smae, but mongodb is webscale so this won't be an issue
+      userPosts[i].poster.id = poster._id
     } else {
-      userPosts[i].poster = 'ghost'
-      userPosts[i].posterID = '000000000000000000000000'
+      userPosts[i].poster.name = 'ghost'
+      userPosts[i].poster.id = '000000000000000000000000'
     }
   }
 
@@ -770,8 +773,10 @@ app.get("/api/posts/:post", async function (req, res) {
   try {
     var post = await posts.findOne({ _id: req.params.post })
     var poster = await findUserDataByID(post.poster)
-    post.poster = poster.name;
-    post.posterID = poster._id;
+    post.poster = {
+      name: poster.name,
+      id: poster._id
+    }
     res.json(post);
   } catch {
     res.status(404).json({ error: "no post found" });
@@ -1012,7 +1017,7 @@ function findUserData(name) {
 function findUserDataByID(id) {
   id = id.toString()
   if (id.length !== 24) {
-    id = "000000000000000000000000" // if the id isn't 12 bytes, use a placeholder
+    id = "000000000000000000000001" // if the id isn't 12 bytes, use a placeholder. // todo, should this be the ghost?
   }
 
   return new Promise(async (resolve, reject) => {

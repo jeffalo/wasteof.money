@@ -18,10 +18,10 @@ export default {
 `
 <div class="max-w-2xl flex p-6 mx-auto my-5 bg-white rounded-lg shadow-md" :class="{'bg-indigo-100': post.highlight}">
 	<div class="pt-1 w-full">
-		<a :href="'/users/'+post.poster" class="font-normal">
-			<img :src="'/picture/' + post.posterID" height="30px" class="rounded-full h-6 inline-block shadow"/>
+		<a :href="'/users/'+post.poster.name" class="font-normal">
+			<img :src="'/picture/' + post.poster.id" height="30px" class="rounded-full h-6 inline-block shadow"/>
 			<h4 class="inline-block text-xl text-gray-900 leading-tight align-middle ml-1">
-				@{{ post.poster }}
+				@{{ post.poster.name }}
 			</h4>
 		</a>
 		<a :href="'/posts/'+post._id" class="font-normal text-black w-full">
