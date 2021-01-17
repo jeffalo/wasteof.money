@@ -818,22 +818,27 @@ app.get("/api/posts/:post/comments", async function (req, res) {
 
 app.post("/posts/:post/comment", checkLoggedIn(), async function (req, res, next) {
   var user = res.locals.requester;
-
+  var post = await posts.findOne({_id:req.params.post})
   if (req.is("application/json")) {
-    comments
+    if(post){
+      comments
       .insert({
         content: req.body.content,
         poster: user._id.toString(),
         post: req.params.post.toString(),
         time: Date.now()
       })
-      .then(comment => {
+      .then(async comment => {
+        await addMessage(post.poster, `<a href='/users/${user.name}'>@${user.name}</a> commented on <a href='/posts/${post._id}'>your post</a>.`)
         res.json({ ok: "made comment", id: comment._id });
       })
       .catch(err => {
         res.status(500).json({ error: "uncaught server error" });
         console.error(err);
       });
+    } else {
+      res.status(404).json({ error:'no post found' })
+    }
   } else {
     res.status(415).json({ error: "must send json data" });
   }
@@ -948,7 +953,7 @@ app.post("/users/:name/follow", checkLoggedIn(), async function (req, res) {
           following: following.length,
         });
         addMessage(
-          userDB.name,
+          userDB.id,
           `<a href='/users/${user.name}'>@${user.name}</a> is now following you.`
         );
       } else {
@@ -1058,10 +1063,10 @@ function findSocketsByID(id) {
   return connected.filter(s => s.id == id)
 }
 
-function addMessage(name, text, time = Date.now()) {
+function addMessage(id, text, time = Date.now()) {
   return new Promise(async (resolve, reject) => {
     try {
-      var user = await findUserData(name)
+      var user = await findUserDataByID(id)
 
       if (user) {
         const message = {
