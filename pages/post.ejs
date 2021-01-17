@@ -92,6 +92,7 @@
                 this.fetchComments(this.page, false)
             },
             comment: async function (input) {
+                this.comment = ''
                 var postres = await fetch(`/posts/${this.postID}/comment`, {
                     method: 'POST',
                     headers: {
