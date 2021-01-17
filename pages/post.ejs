@@ -13,7 +13,7 @@
         <input type="hidden" id="postID" value="<%= post._id %>">
     </div>
     <main class='container mx-auto px-4 mt-28 md:mt-16' id='app' v-cloak>
-        <post v-if="post.content" :post="post" :logged-in-user-id="loggedInUserID"></post>
+        <post :dont-link="true" v-if="post.content" :post="post" :logged-in-user-id="loggedInUserID"></post>
         <div class="mx-auto max-w-2xl">
             <h1 class="text-base block">Comments<!-- ({{ comments.length }}) --></h1>
             <form @submit.prevent="comment(commentInput)">

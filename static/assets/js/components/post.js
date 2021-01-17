@@ -4,6 +4,9 @@ export default {
 			type: Object,
 			required: true
 		},
+		dontLink:{
+			type: Boolean
+		},
 		loggedInUserId: {}
 	},
   methods: {
@@ -24,14 +27,14 @@ export default {
 				@{{ post.poster.name }}
 			</h4>
 		</a>
-		<a :href="'/posts/'+post._id" class="font-normal text-black w-full">
+		<component :is="dontLink? 'span' : 'a'" :href="'/posts/'+post._id" class="font-normal text-black w-full">
 			<p class="text-base text-gray-600 leading-normal wasteof-break-words">
 				{{ post.content }}
 			</p>
 			<p class="text-base text-gray-500 italic leading-normal">
 				{{ postIdInfo }}
 			</p>
-		</a>
+		</component>
 		<div>
 			<span
 				@click="onclick"
