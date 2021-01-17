@@ -953,7 +953,7 @@ app.post("/users/:name/follow", checkLoggedIn(), async function (req, res) {
           following: following.length,
         });
         addMessage(
-          userDB.id,
+          userDB._id,
           `<a href='/users/${user.name}'>@${user.name}</a> is now following you.`
         );
       } else {
