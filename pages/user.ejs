@@ -83,7 +83,7 @@
                 this.page++
                 var res = await fetch(`/api/users/${user}/posts?page=${this.page}`)
                 var data = await res.json()
-                this.posts = data.posts = this.posts.concat(data.posts)
+                this.posts = data.posts = this.posts.concat(data.posts) // yo what is this meant to be like this
                 this.last = data.last
             },
             lovePost: async function (id) {

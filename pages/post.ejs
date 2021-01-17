@@ -13,28 +13,33 @@
         <input type="hidden" id="postID" value="<%= post._id %>">
     </div>
     <main class='container mx-auto px-4 mt-28 md:mt-16' id='app' v-cloak>
-        <post :post="post" :logged-in-user-id="loggedInUserID"></post>
+        <post v-if="post.content" :post="post" :logged-in-user-id="loggedInUserID"></post>
         <div class="mx-auto max-w-2xl">
-            <h1 class="text-base block">Comments ({{ comments.comments.length }})</h1>
+            <h1 class="text-base block">Comments<!-- ({{ comments.length }}) --></h1>
             <form @submit.prevent="comment(commentInput)">
-                <input
-                class="appearance-none relative inline-block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:shadow-outline-blue focus:border-blue-300 focus:z-10 sm:text-sm sm:leading-5"
-                type='text' placeholder="Write a comment" v-model="commentInput">
+                <div>
+                    <textarea v-model="commentInput" class="appearance-none w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:shadow-outline-blue focus:border-indigo-300 focus:z-10 sm:text-sm sm:leading-5" :placeholder="`Write something ${commentWord}...`"></textarea>
+                    <input type="submit" value="Post" class="px-3 py-2 rounded-md bg-indigo-500 text-white cursor-pointer">
+                </div>
             </form>
-            <div v-for="comment in comments.comments" :key="comment._id" class="p-4 my-5 bg-white rounded-lg shadow">
+            <div v-for="comment in comments" :key="comment._id" class="p-4 my-5 bg-white rounded-lg shadow">
                 <div class="block align-middle">
-                    <img src="/picture/5fe24f5e66e21f46f4f1c639" height="30px" class="rounded-full h-6 inline-block shadow">
+                    <img :src="`/picture/${post.poster.id}`" height="30px" class="rounded-full h-6 inline-block shadow">
                     <h4 class="inline-block text-lg text-gray-900 leading-tight ml-1">
-                        @jeffalo
+                        @{{ comment.poster.name }}
                     </h4>
                     <span class="inline-block ml-2 text-base text-gray-500 italic leading-normal">
-                        1/15/2021 7:49:27 PM
+                        {{ new Date(comment.time).toLocaleDateString("en-US") + " " + new Date(comment.time).toLocaleTimeString("en-US") }}
                     </span>
                 </div>
                 <p class="text-base text-gray-600 leading-normal wasteof-break-words block">
                     {{ comment.content }}
                 </p>
             </div>
+            <button v-if='!last' @click="loadMore()" href="/login"
+                class="max-w-2xl w-full mx-auto flex items-center justify-center mb-5 py-3 border border-transparent text-base font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 md:text-lg transition duration-150 ease-in-out">
+                Load more
+            </button>
         </div>
     </main>
 </body>
@@ -50,13 +55,18 @@
     var app = new Vue({
         el: '#app',
         data: {
+            commentWords: ['insightful', 'constructive', 'great', 'helpful'],
+            commentWord: '',
             post: {
-                loves: []
+                loves: [],
+                poster: {
+
+                }
             },
-            comments: {
-                comments: []
-            },
-            commentInput:'',
+            comments: [],
+            page: 1,
+            last: true,
+            commentInput: '',
             postID,
             loggedInUserID
         },
@@ -64,13 +74,12 @@
             Post // this is much cleaner than doing Vue.component(...)
         },
         async mounted() {
+            this.commentWord = this.commentWords[Math.floor(Math.random() * this.commentWords.length)]
             var postRes = await fetch(`/api/posts/${this.postID}`)
             var postData = await postRes.json()
             this.post = postData
 
-            var commentsRes = await fetch(`/api/posts/${this.postID}/comments`)
-            var commentsData = await commentsRes.json()
-            this.comments = commentsData
+            this.fetchComments()
         },
         methods: {
             lovePost: async function (id) {
@@ -78,8 +87,43 @@
                     this.post.loves = newLoves
                 })
             },
-            comment: function(input){
-                alert(input)
+            loadMore: async function (){
+                this.page++
+                this.fetchComments(this.page, false)
+            },
+            comment: async function (input) {
+                var postres = await fetch(`/posts/${this.postID}/comment`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        content: input
+                    })
+                })
+                var postjson = await postres.json()
+                console.log(postjson)
+                if (postjson.ok) {
+                    this.fetchComments()
+                }
+                if (postjson.error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Failed to post',
+                        text: postjson.error,
+                        footer: '<a href="https://github.com/jeffalo/wasteof.money/issues">Report issues</a>'
+                    })
+                }
+            },
+            fetchComments: async function (page = 1, reset = true) {
+                var commentsRes = await fetch(`/api/posts/${this.postID}/comments?page=${page}`)
+                var commentsData = await commentsRes.json()
+                if(reset){
+                    this.comments = commentsData.comments
+                } else {
+                    this.comments.push(...commentsData.comments)
+                }
+                this.last = commentsData.last
             }
         }
     })

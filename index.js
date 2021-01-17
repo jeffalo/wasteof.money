@@ -492,9 +492,9 @@ app.get("/api/messages", checkLoggedIn(), async (req, res) => {
     { sort: { time: -1, _id: -1 }, limit: 15, skip: (page) * 15 }
   );
   if (nextMsgs.length == 0) last = true
-  var unread = msgs.filter(m=>m.read == false)
-  var read = msgs.filter(m=>m.read == true)
-  res.json({unread, read, last});
+  var unread = msgs.filter(m => m.read == false)
+  var read = msgs.filter(m => m.read == true)
+  res.json({ unread, read, last });
 });
 
 app.get("/api/messages/count", checkLoggedIn(), async (req, res) => {
@@ -508,7 +508,7 @@ app.post("/api/messages/read", checkLoggedIn(), async (req, res) => {
 
   if (req.xhr) {
     try {
-      await messages.update({ to: user._id.toString(), read: false }, { $set: { read: true } }, { multi:true })
+      await messages.update({ to: user._id.toString(), read: false }, { $set: { read: true } }, { multi: true })
       var sockets = findSocketsByID(user._id)
       sockets.forEach(s => {
         s.socket.emit('updateMessageCount', 0)
@@ -789,7 +789,7 @@ app.get("/api/posts/:post/comments", async function (req, res) {
   var page = parseInt(req.query.page) || 1;
 
   var postComments = await comments.find(
-    { post: post._id },
+    { post: post._id.toString() },
     { sort: { time: -1, _id: -1 }, limit: 15, skip: (page - 1) * 15 }
   );
 
@@ -807,13 +807,36 @@ app.get("/api/posts/:post/comments", async function (req, res) {
 
   var last = false
   var nextComments = await comments.find(
-    { post: post._id },
+    { post: post._id.toString() },
     { sort: { time: -1, _id: -1 }, limit: 15, skip: (page) * 15 }
   );
 
   if (nextComments.length == 0) last = true
 
   res.json({ comments: postComments, last })
+})
+
+app.post("/posts/:post/comment", checkLoggedIn(), async function (req, res, next) {
+  var user = res.locals.requester;
+
+  if (req.is("application/json")) {
+    comments
+      .insert({
+        content: req.body.content,
+        poster: user._id.toString(),
+        post: req.params.post.toString(),
+        time: Date.now()
+      })
+      .then(comment => {
+        res.json({ ok: "made comment", id: comment._id });
+      })
+      .catch(err => {
+        res.status(500).json({ error: "uncaught server error" });
+        console.error(err);
+      });
+  } else {
+    res.status(415).json({ error: "must send json data" });
+  }
 })
 
 app.get("/posts/:post", async function (req, res, next) {
