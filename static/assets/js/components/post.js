@@ -48,7 +48,7 @@ export default {
 					),
 					h(
 						"p", {
-							class: ["text-base", "text-gray-600", "leading-normal"]
+							class: ["text-base", "text-gray-500", "leading-normal"]
 						},
 						this.post.content
 					),

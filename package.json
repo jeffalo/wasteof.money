@@ -1,7 +1,7 @@
 {
   "name": "social",
   "version": "1.0.0",
-  "description": "",
+  "description": "wasteof.money is a social media with aspects inspired from Twitter and Scratch.  | Pictures             |   :-------------------------:| ![](https://user-images.githubusercontent.com/64214252/101201862-5e1c9f00-3636-11eb-8872-fed504864817.png)   ![](https://user-images.githubusercontent.com/40470736/101082518-ddb15c00-35ab-11eb-933b-babb15b19cd3.png)  ![](https://user-images.githubusercontent.com/40470736/101082530-e2761000-35ab-11eb-9728-373d29ab7579.png)   ## How to install to help contribute wasteof.money requires a mongodb database to function. You can use a free cloud hosted version by following the instructions [here](https://github.com/jeffalo/wasteof.money/blob/master/docs/atlas.md). ### Setup  Install node, npm and mongodb.",
   "main": "index.js",
   "scripts": {
     "start": "npm run serve",
@@ -12,7 +12,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "GPLv3",
+  "license": "GPL-3.0-or-later",
   "dependencies": {
     "autoprefixer": "^10.0.2",
     "bcrypt": "^5.0.0",
@@ -32,10 +32,21 @@
     "prompts": "^2.4.0"
   },
   "devDependencies": {
-    "tailwindcss": "^1.9.6",
+    "tailwindcss": "^2",
     "nodemon": "^2.0.6"
   },
   "engines": {
     "node": "12.x"
-  }
+  },
+  "directories": {
+    "doc": "docs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jeffalo/wasteof.money.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jeffalo/wasteof.money/issues"
+  },
+  "homepage": "https://github.com/jeffalo/wasteof.money#readme"
 }
