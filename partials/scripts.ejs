@@ -1,3 +1,28 @@
 <script src="/assets/js/post.js"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
+
+<% if (loggedIn) { %>
+<script src="/socket.io/socket.io.js"></script>
+
+<script>
+    var socket = io();
+
+    socket.on('connect', ()=>{
+        console.log('connected to socket.io server')
+    })
+
+    var messageCount = document.getElementById('message-count')
+
+    socket.on('updateMessageCount', (count) => {
+        if(count == 0){
+            messageCount.classList.remove('flex')
+            messageCount.classList.add('hidden')
+        } else {
+            messageCount.classList.remove('hidden')
+            messageCount.classList.add('flex')
+        }
+        document.getElementById('message-count').innerText = count
+    })
+</script>
+<% } %>

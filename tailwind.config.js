@@ -5,7 +5,11 @@ module.exports = {
   },
   purge: [],
   theme: {
-    extend: {},
+    extend: {
+      spacing: {
+        '28': '7rem',
+      }
+    },
     inset: {
       '0': 0,
       '10': '10px'

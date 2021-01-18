@@ -10,11 +10,11 @@
         <% if(loggedIn){ %>
         <input type="hidden" id="loggedInUserID" value="<%= loggedInUser._id %>">
         <% } %>
-        <input type="hidden" id="userName" value="<%= user.name %>">
+        <input type="hidden" id="username" value="<%= user.name %>">
     </div>
-    <main class='container mx-auto px-4 mt-24 md:mt-16' id='app' v-cloak>
+    <main class='container mx-auto px-4 mt-28 md:mt-16' id='app' v-cloak>
         <img src="/picture/<%= user._id %>" height="30px" class='rounded-full h-10 inline-block shadow'>
-        <h1 class="text-base">@<%= user.name %></h1>
+        <h1 class="text-base">@<%= user.name %> <% if(user.verified) {%><span class="iconify inline-block mr-1 text-indigo-600" data-icon="uil:check-circle" data-inline="true"></span><% } %></h1>
         <% if(loggedInUser) { %>
         <button data-user='<%= user.name %>' id='follow'
             class="group relative inline-block py-2 px-4 border border-transparent text-sm leading-5 font-medium rounded-md text-white <%= user.followers.includes(loggedInUser._id.toString())? 'bg-gray-500 hover:bg-gray-500' : 'bg-indigo-500 hover:bg-indigo-500' %> transition duration-150 ease-in-out">
@@ -23,7 +23,7 @@
                 id='follow-text'><%= user.followers.includes(loggedInUser._id.toString())? 'Unfollow' : 'Follow' %></span>
         </button>
         <% } %>
-        <p class="text-gray-700"><a href='#'><span id='follower-count'><%= user.followers ? user.followers.length.toString() : '0' %></span> followers</a> | <a href='#'><span id='following-count'><%= user.following ? user.following.length.toString() : '0' %></span> following</a></p> <!-- todo: make api also find who the user is following -->
+        <p class="text-gray-700"><a :href='`/users/${user}/followers`'><span id='follower-count'><%= user.followers ? user.followers.length.toString() : '0' %></span> followers</a> | <a :href='`/users/${user}/following`'><span id='following-count'><%= user.following ? user.following.length.toString() : '0' %></span> following</a></p> <!-- todo: make api also find who the user is following -->
         <p class="text-gray-700 italic">id: <%= user._id %></p>
         <post v-for="post in posts" v-bind:key="post._id" v-bind:post="post" v-bind:logged-in-user-id="loggedInUserID"></post>
         <button v-if='!last' @click="loadMore()" href="/login"
@@ -34,16 +34,17 @@
 </body>
 
 <%- include('../partials/scripts.ejs'); %>
+<script src="/assets/js/love.js"></script>
 <script type="module">
     import Post from "../assets/js/components/post.js";
     console.log('user script loaded')
-    var user = document.getElementById('userName').value //TODO: is there a better way to do this? TODO: clean this the heck up
-    var userInput = document.getElementById('loggedInUserID')
+    var user = document.getElementById('username').value //TODO: is there a better way to do this? TODO: clean this the heck up
+    var loggedInUserIDInput = document.getElementById('loggedInUserID')
 
     const urlParams = new URLSearchParams(window.location.search);
     const onePost = urlParams.get('post');
 
-    if (userInput) var loggedInUserID = userInput.value
+    if (loggedInUserIDInput) var loggedInUserID = loggedInUserIDInput.value
     var app = new Vue({
         el: '#app',
         components: {
@@ -82,7 +83,7 @@
                 this.page++
                 var res = await fetch(`/api/users/${user}/posts?page=${this.page}`)
                 var data = await res.json()
-                this.posts = data.posts = this.posts.concat(data.posts)
+                this.posts = data.posts = this.posts.concat(data.posts) // yo what is this meant to be like this
                 this.last = data.last
             },
             lovePost: async function (id) {
@@ -135,33 +136,6 @@
                 icon: 'error',
                 title: 'Failed to follow',
                 text: followjson.error,
-                footer: '<a href="https://github.com/jeffalo/wasteof.money/issues" target="_blank" rel="noopener">Report issues</a>'
-            })
-        }
-    }
-
-    async function love(id, callback) {
-        console.log(`loving ${id}`)
-        var loveres = await fetch(`/posts/${id}/love`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        var lovejson = await loveres.json()
-        console.log(lovejson)
-        if (lovejson.ok) {
-            var action = lovejson.action
-            var newCount = lovejson.loves
-            if (action == 'love') callback(newCount, 'love')
-            if (action == 'unlove') callback(newCount, 'unlove')
-        }
-        if (lovejson.error) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Failed to love',
-                text: lovejson.error,
                 footer: '<a href="https://github.com/jeffalo/wasteof.money/issues" target="_blank" rel="noopener">Report issues</a>'
             })
         }

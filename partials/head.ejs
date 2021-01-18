@@ -27,6 +27,9 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/croppie@2.6.5/croppie.css">
     <% } %>
     <style>
+        html {
+            overflow-y: scroll;
+        }
         /* width */
         ::-webkit-scrollbar {
             width: 5px;
@@ -48,5 +51,6 @@
         }
 
         [v-cloak] > * { display:none; }
-        [v-cloak]::before { content: "Loading..."; }    </style>
+        /* [v-cloak]::before { content: "Loading..."; } */    
+    </style>
 </head>

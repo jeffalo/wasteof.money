@@ -5,6 +5,7 @@ const matter = require("gray-matter");
 const rateLimit = require("express-rate-limit");
 var bodyParser = require("body-parser");
 var cookieParser = require("cookie-parser");
+const cookie = require('cookie')
 var bcrypt = require("bcrypt");
 var sizeOf = require('image-size');
 const fs = require("fs");
@@ -16,20 +17,45 @@ require("dotenv").config();
 
 const port = process.env.LISTEN_PORT || 8080;
 const app = express();
+var http = require('http').createServer(app);
+var io = require('socket.io')(http);
 
-const db = require("monk")(process.env.DB_URL);
+const monk = require("monk")
+const db = monk(process.env.DB_URL);
 
 //database
-const users = db.get("users"),
-  posts = db.get("posts");
+const users = db.get("users")
+const posts = db.get("posts")
+const comments = db.get("comments")
+const messages = db.get("messages")
 
 users.createIndex("name", { unique: true });
 
+(async () => { // todo: this shouldn't reset ghost's followers/following
+  const ghostUser = {
+    _id: monk.id('000000000000000000000000'),
+    name: "ghost",
+    password: '',
+    followers: [],
+    verified: true
+  }
+
+  var findGhostUser = await users.findOne({ _id: monk.id('000000000000000000000000') })
+  if (findGhostUser) {
+    //console.log('ghost user found, updating')
+    await users.update({ _id: monk.id('000000000000000000000000') }, { $set: ghostUser })
+  } else {
+    users.insert(ghostUser)
+  }
+})()
+
+
 const saltRounds = 10;
+const usernameRegex = /^[a-z0-9_\-]{1,20}$/;
 
 var tokens = [];
 
-const usernameRegex = /^[a-z0-9_\-]{1,20}$/;
+app.set('trust proxy', 1);
 
 app.use(
   express.static("static", {
@@ -60,7 +86,6 @@ app.use(async (req, res, next) => {
     } else {
       res.locals.loggedIn = false; // the account was deleted but token remains
       removeToken(userCookie);
-      console.log(tokens);
     }
   } else {
     res.locals.loggedIn = false;
@@ -71,8 +96,8 @@ app.use(async (req, res, next) => {
 app.use(
   "/api/",
   rateLimit({
-    windowMs: 3600000,
-    max: 100,
+    windowMs: 1000,
+    max: 10,
     handler(req, res) {
       res.status(429).json({ error: "too many request" });
     }
@@ -283,11 +308,7 @@ app.post(
             .insert({
               name: username,
               password: hashedPassword,
-              followers: [],
-              messages: {
-                unread: [],
-                read: []
-              }
+              followers: []
             })
             .then(user => {
               console.log(user);
@@ -368,28 +389,16 @@ app.get("/explore", async function (req, res) {
   var user = res.locals.requester,
     loggedIn = res.locals.loggedIn;
 
-  if (loggedIn) {
-    // logged in, show posts by people user is following etc
-    ejs.renderFile(
-      __dirname + "/pages/explore.ejs",
-      { user, loggedIn },
-      (err, str) => {
-        if (err) console.log(err);
-        res.send(str);
-      }
-    );
-  } else {
-    //logged out explore page, show trending posts etc
-    ejs.renderFile(
-      __dirname + "/pages/explore.ejs",
-      { user, loggedIn },
-      (err, str) => {
-        if (err) console.log(err);
-        res.send(str);
-      }
-    );
-  }
+  ejs.renderFile(
+    __dirname + "/pages/explore.ejs",
+    { user, loggedIn, loggedInUser: user },
+    (err, str) => {
+      if (err) console.log(err);
+      res.send(str);
+    }
+  );
 });
+
 app.get("/settings", checkLoggedIn(), async function (req, res) {
   var user = res.locals.requester,
     loggedIn = res.locals.loggedIn;
@@ -404,44 +413,106 @@ app.get("/settings", checkLoggedIn(), async function (req, res) {
   );
 });
 
-app.get("/api/messages", checkLoggedIn(), async (req, res) => {
-  var user = res.locals.requester,
-    page = parseInt(req.query.page) || 1;
+app.get("/api/top/users", async (req, res) => {
+  // top 10 or something most followed users
+  var top = await users.aggregate([
+    { $unwind: "$followers" },
+    {
+      "$group": {
+        "_id": "$_id",
+        "name": { "$first": "$name" },
+        "followers": { "$sum": 1 }
+      }
+    },
+    { $sort: { followers: -1 } },
+    { $limit: 10 }
+  ])
 
-  var unread = user.messages.unread, // don't paginate unread messages?
-    read = paginate(user.messages.read, 15, page),
-    last = false;
-  if (paginate(user.messages.read, 15, page + 1).length == 0) last = true; //set last to true if this is the last page
-  console.log(read);
-  var messages = {
-    unread,
-    read,
-    last
-  };
-  messages.unread = messages.unread.sort(function (x, y) {
-    return y.time - x.time;
-  });
-  messages.read = messages.read.sort(function (x, y) {
-    return y.time - x.time;
-  });
-  res.json(messages);
+  res.json(top.map(u => ({ id: u._id, name: u.name, followers: u.followers })))
+})
+
+app.get("/api/top/posts", async (req, res) => {
+  // top 10 or so most loved posts
+})
+
+app.get("/api/trending/posts", async (req, res) => {
+  var trending = await posts.aggregate([{ $sample: { size: 10 } }])
+  for (var i in trending) {
+    var poster = await findUserDataByID(trending[i].poster);
+    trending[i].poster = {}
+    if (poster) {
+      trending[i].poster.name = poster.name;
+      trending[i].poster.id = poster._id
+    } else {
+      trending[i].poster.name = 'ghost';
+      trending[i].poster.id = '000000000000000000000000'
+    }
+  }
+  res.json(trending)
+})
+
+app.get("/api/following/posts", checkLoggedIn(), async (req, res) => {
+  // give posts by people the loggedIn user is following
+  var user = res.locals.requester
+  var page = parseInt(req.query.page) || 1;
+
+  var following = await users.find({ followers: { $all: [user._id.toString()] } })
+  var postsByFollowing = await posts.find({ poster: { $in: following.map(f => f._id) } }, { sort: { time: -1, _id: -1 }, limit: 15, skip: (page - 1) * 15 });
+
+  for (var i in postsByFollowing) {
+    var poster = await findUserDataByID(postsByFollowing[i].poster);
+    postsByFollowing[i].poster = {}
+    if (poster) {
+      postsByFollowing[i].poster.name = poster.name;
+      postsByFollowing[i].poster.id = poster._id
+    } else {
+      postsByFollowing[i].poster.name = 'ghost'
+      postsByFollowing[i].poster.id = '000000000000000000000000'
+    }
+  }
+  var last = false
+  var nextPosts = await posts.find({ poster: { $in: following.map(f => f._id) } }, { sort: { time: -1, _id: -1 }, limit: 15, skip: (page) * 15 });
+  if (nextPosts.length == 0) last = true // if there are no posts on the next page, then there must not any more pages, thus this is the last page, i figured this out by my self cool eyes emoji
+
+  res.json({ posts: postsByFollowing, last });
+})
+
+app.get("/api/messages", checkLoggedIn(), async (req, res) => {
+  var user = res.locals.requester
+  var page = parseInt(req.query.page) || 1
+
+  var msgs = await messages.find(
+    { to: user._id.toString() },
+    { sort: { time: -1, _id: -1 }, limit: 15, skip: (page - 1) * 15 }
+  )
+
+  var last = false
+  var nextMsgs = await messages.find(
+    { to: user._id.toString() },
+    { sort: { time: -1, _id: -1 }, limit: 15, skip: (page) * 15 }
+  );
+  if (nextMsgs.length == 0) last = true
+  var unread = msgs.filter(m => m.read == false)
+  var read = msgs.filter(m => m.read == true)
+  res.json({ unread, read, last });
 });
 
 app.get("/api/messages/count", checkLoggedIn(), async (req, res) => {
-  var user = res.locals.requester,
-    messages = user.messages;
-  res.json({ count: messages.unread.length });
+  var user = res.locals.requester
+  var msgs = await messages.find({ to: user._id.toString(), read: false })
+  res.json({ count: msgs.length })
 });
 
 app.post("/api/messages/read", checkLoggedIn(), async (req, res) => {
   var user = res.locals.requester;
 
   if (req.xhr) {
-    var messages = user.messages;
-    messages.read = messages.read.concat(messages.unread);
-    messages.unread = [];
     try {
-      await users.update({ name: user.name }, { $set: { messages } });
+      await messages.update({ to: user._id.toString(), read: false }, { $set: { read: true } }, { multi: true })
+      var sockets = findSocketsByID(user._id)
+      sockets.forEach(s => {
+        s.socket.emit('updateMessageCount', 0)
+      })
       res.json({ ok: "cleared messages" });
     } catch (error) {
       console.log(error);
@@ -483,7 +554,6 @@ app.get("/api/users/:user", async (req, res) => {
   var user = await findUserData(req.params.user);
   if (user) {
     var following = await users.find({ followers: { $all: [user._id.toString()] } })
-    console.log(following)
     res.json({
       _id: user._id,
       name: user.name,
@@ -498,27 +568,33 @@ app.get("/api/users/:user", async (req, res) => {
 //TODO: user follower api
 
 app.get("/api/users/:user/posts", async (req, res) => {
-  var user = await findUserData(req.params.user),
-    userPosts = await posts.find(
-      { poster: user._id },
-      { sort: { time: -1, _id: -1 } }
-    ); //sort by time but fallback to id
+  var user = await findUserData(req.params.user)
+  var page = parseInt(req.query.page) || 1;
+
+  var userPosts = await posts.find(
+    { poster: user._id },
+    { sort: { time: -1, _id: -1 }, limit: 15, skip: (page - 1) * 15 }
+  ); //sort by time but fallback to id
 
   for (var i in userPosts) {
     var poster = await findUserDataByID(userPosts[i].poster);
-    userPosts[i].poster = poster.name; // this is inefficent, we know the user will always be the smae, but mongodb is webscale so this won't be an issue
-    userPosts[i].posterID = poster._id
+    userPosts[i].poster = {}
+    if (poster) {
+      userPosts[i].poster.name = poster.name; // this is inefficent, we know the user will always be the smae, but mongodb is webscale so this won't be an issue
+      userPosts[i].poster.id = poster._id
+    } else {
+      userPosts[i].poster.name = 'ghost'
+      userPosts[i].poster.id = '000000000000000000000000'
+    }
   }
 
-  var page = parseInt(req.query.page) || 1;
-  if (user) {
-    var pagePosts = paginate(userPosts, 15, page),
-      last = false;
-    if (paginate(userPosts, 15, page + 1).length == 0) last = true; //set last to true if this is the last page
-    res.json({ posts: pagePosts, last });
-  } else {
-    res.status(404).json({ error: "no user found" });
-  }
+  var last = false
+  var nextPosts = await posts.find(
+    { poster: user._id },
+    { sort: { time: -1, _id: -1 }, limit: 15, skip: (page) * 15 }
+  );
+  if (nextPosts.length == 0) last = true // if there are no posts on the next page, then there must not any more pages, thus this is the last page, i figured this out by my self cool eyes emoji
+  res.json({ posts: userPosts, last });
 });
 
 app.get("/api/users/:user/posts/:post", async (req, res) => {
@@ -547,10 +623,92 @@ app.get("/users/:user", async function (req, res, next) {
   }
 });
 
+app.get("/api/users/:user/followers", async function (req, res, next) {
+  var user = await findUserData(req.params.user);
+  var followers = []
+  for (i in user.followers) {
+    var u = await findUserDataByID(user.followers[i]);
+    if (u) {
+      followers.push({
+        id: u._id,
+        name: u.name
+      })
+    } else {
+      followers.push({
+        id: '000000000000000000000000',
+        name: 'ghost'
+      })
+    }
+  }
+  followers.reverse() // we want the followers in order starting with the newest
+  res.json(followers)
+})
+
+app.get("/users/:user/followers", async function (req, res, next) {
+  var loggedInUser = res.locals.requester,
+    loggedIn = res.locals.loggedIn,
+    user = await findUserData(req.params.user);
+
+  if (user) {
+    ejs.renderFile(
+      __dirname + "/pages/followers.ejs",
+      { user, loggedInUser, loggedIn },
+      (err, str) => {
+        if (err) console.log(err);
+        res.send(str);
+      }
+    );
+  } else {
+    next(); //go to 404
+  }
+});
+
+app.get("/api/users/:user/following", async function (req, res, next) {
+  var user = await findUserData(req.params.user);
+  var followingDB = await users.find({ followers: { $all: [user._id.toString()] } })
+  var following = []
+  for (i in followingDB) {
+    var u = await findUserDataByID(followingDB[i]._id);
+
+    if (u) {
+      following.push({
+        id: u._id,
+        name: u.name
+      })
+    } else {
+      following.push({
+        id: '000000000000000000000000',
+        name: 'ghost'
+      })
+    }
+  }
+  following.reverse() // we want the followers in order starting with the newest
+  res.json(following)
+})
+
+app.get("/users/:user/following", async function (req, res, next) {
+  var loggedInUser = res.locals.requester,
+    loggedIn = res.locals.loggedIn,
+    user = await findUserData(req.params.user);
+
+  if (user) {
+    ejs.renderFile(
+      __dirname + "/pages/following.ejs",
+      { user, loggedInUser, loggedIn },
+      (err, str) => {
+        if (err) console.log(err);
+        res.send(str);
+      }
+    );
+  } else {
+    next(); //go to 404
+  }
+});
+
 app.delete("/picture/:user", checkLoggedIn(), async (req, res) => { // 
   var requester = res.locals.requester
-  if(!req.xhr) return res.status(403).json({ error: "must be requested with xhr" });
-  
+  if (!req.xhr) return res.status(403).json({ error: "must be requested with xhr" });
+
   if (req.params.user == requester._id) {
     try {
       await fs.promises.unlink(`./uploads/profiles/${req.params.user}.png`)
@@ -568,7 +726,7 @@ app.delete("/picture/:user", checkLoggedIn(), async (req, res) => { //
 app.post("/picture/:user", checkLoggedIn(), async (req, res) => {
   // todo, verify image dimentions etc etc
   var requester = res.locals.requester
-  if(!req.xhr) return res.status(403).json({ error: "must be requested with xhr" });
+  if (!req.xhr) return res.status(403).json({ error: "must be requested with xhr" });
   if (req.params.user == requester._id) {
     //console.log(req.body.image.toString())
     var data = req.body.image
@@ -609,27 +767,100 @@ app.get("/picture/:user", async function (req, res, next) {
     res.set("Content-Type", "image/png");
     res.send(file);
   }
-
 });
 
 app.get("/api/posts/:post", async function (req, res) {
   try {
-    var post = await posts.findOne({ _id: req.params.post }),
-      poster = await findUserDataByID(post.poster);
-    post.poster = poster.name;
+    var post = await posts.findOne({ _id: req.params.post })
+    var poster = await findUserDataByID(post.poster)
+    post.poster = {
+      name: poster.name,
+      id: poster._id
+    }
     res.json(post);
   } catch {
     res.status(404).json({ error: "no post found" });
   }
 });
 
+app.get("/api/posts/:post/comments", async function (req, res) {
+  var post = await posts.findOne({ _id: req.params.post })
+
+  var page = parseInt(req.query.page) || 1;
+
+  var postComments = await comments.find(
+    { post: post._id.toString() },
+    { sort: { time: -1, _id: -1 }, limit: 15, skip: (page - 1) * 15 }
+  );
+
+  for (var i in postComments) {
+    var poster = await findUserDataByID(postComments[i].poster);
+    postComments[i].poster = {};
+    if (poster) {
+      postComments[i].poster.name = poster.name;
+      postComments[i].poster.id = poster._id;
+    } else {
+      postComments[i].poster.name = 'ghost'
+      postComments[i].poster.id = '000000000000000000000000'
+    }
+  }
+
+  var last = false
+  var nextComments = await comments.find(
+    { post: post._id.toString() },
+    { sort: { time: -1, _id: -1 }, limit: 15, skip: (page) * 15 }
+  );
+
+  if (nextComments.length == 0) last = true
+
+  res.json({ comments: postComments, last })
+})
+
+app.post("/posts/:post/comment", checkLoggedIn(), async function (req, res, next) {
+  var user = res.locals.requester;
+  var post = await posts.findOne({_id:req.params.post})
+  if (req.is("application/json")) {
+    if(post){
+      comments
+      .insert({
+        content: req.body.content,
+        poster: user._id.toString(),
+        post: req.params.post.toString(),
+        time: Date.now()
+      })
+      .then(async comment => {
+        await addMessage(post.poster, `<a href='/users/${user.name}'>@${user.name}</a> commented on <a href='/posts/${post._id}'>your post</a>.`)
+        res.json({ ok: "made comment", id: comment._id });
+      })
+      .catch(err => {
+        res.status(500).json({ error: "uncaught server error" });
+        console.error(err);
+      });
+    } else {
+      res.status(404).json({ error:'no post found' })
+    }
+  } else {
+    res.status(415).json({ error: "must send json data" });
+  }
+})
+
 app.get("/posts/:post", async function (req, res, next) {
-  try {
-    var post = await posts.findOne({ _id: req.params.post }),
-      poster = await findUserDataByID(post.poster);
-    res.redirect(`/users/${poster.name}?post=${post._id}`);
-  } catch {
-    next(); //404
+  if (req.params.post.length !== 24) return next()
+  var loggedInUser = res.locals.requester,
+    loggedIn = res.locals.loggedIn,
+    post = await posts.findOne({ _id: req.params.post });
+  if (post) {
+    var poster = await findUserDataByID(post.poster)
+    ejs.renderFile(
+      __dirname + "/pages/post.ejs",
+      { post, poster, loggedInUser, loggedIn },
+      (err, str) => {
+        if (err) console.log(err);
+        res.send(str);
+      }
+    );
+  } else {
+    next()
   }
 });
 
@@ -659,51 +890,32 @@ app.post("/post", checkLoggedIn(), async function (req, res) {
 app.post("/posts/:id/love", checkLoggedIn(), async function (req, res) {
   var user = res.locals.requester;
   if (req.xhr) {
-    try {
-      posts
-        .findOne({ _id: req.params.id })
-        .then(post => {
-          if (post) {
-            var loves = post.loves || [];
-            if (!loves.includes(user._id.toString())) {
-              loves.push(user._id.toString());
-              posts
-                .update({ _id: req.params.id }, { $set: { loves: loves } })
-                .then(() => {
-                  res.json({ ok: "loved post", loves: loves, action: "love" });
-                })
-                .catch(updateerr => {
-                  console.log(updateerr);
-                  res.status(500).json({
-                    error: "uncaught database error: " + updateerr.code
-                  }); // todo: don't do this on prod.
-                });
-            } else {
-              loves = loves.filter(i => i !== user._id.toString());
-              posts
-                .update({ _id: req.params.id }, { $set: { loves: loves } })
-                .then(() => {
-                  res.json({ ok: "unloved", loves: loves, action: "unlove" });
-                })
-                .catch(updateerr => {
-                  console.log(updateerr);
-                  res.status(500).json({
-                    error: "uncaught database error: " + updateerr.code
-                  }); // todo: don't do this on prod.
-                });
+    await posts.update({ _id: req.params.id }, [{
+      $set: {
+        loves: {
+          $cond: [
+            {
+              $in: [user._id.toString(), "$loves"]
+            },
+            {
+              $setDifference: ["$loves", [user._id.toString()]]
+            },
+            {
+              $concatArrays: ["$loves", [user._id.toString()]]
             }
-          } else {
-            res.json({ eror: "post not found" });
-          }
-        })
-        .catch(err => {
-          res
-            .status(500)
-            .json({ error: "uncaught database error: " + err.code }); // todo: don't do this on prod.
-        });
-    } catch (error) {
-      console.log(error);
-      res.status(500).json({ error: "oops something went wrong" });
+          ]
+        }
+      }
+    }])
+    var postDB = await posts.findOne({ _id: req.params.id })
+    if (postDB) {
+      if (postDB.loves.includes(user._id.toString())) {
+        res.json({ ok: "loved post", loves: postDB.loves, action: "love" });
+      } else {
+        res.json({ ok: "unloved", loves: postDB.loves, action: "unlove" });
+      }
+    } else {
+      res.status(404).json({ error: "no post found" });
     }
   } else {
     res.status(403).json({ error: "must be requested with xhr" });
@@ -713,61 +925,44 @@ app.post("/posts/:id/love", checkLoggedIn(), async function (req, res) {
 app.post("/users/:name/follow", checkLoggedIn(), async function (req, res) {
   var user = res.locals.requester;
   if (req.xhr) {
-    var followUser = await findUserData(req.params.name);
-    if (followUser) {
-
-      var followers = followUser.followers || [];
-      if (followers.includes(user._id.toString())) {
-        //already follower, unfollow
-        followers = followers.filter(i => i !== user._id.toString());
-
-        try {
-          await users.update(
-            { name: followUser.name },
-            { $set: { followers } }
-          );
-
-          var following = await users.find({ followers: { $all: [followUser._id.toString()] } })
-
-
-          res.json({
-            ok: "unfollowing",
-            action: "unfollow",
-            followers: followers.length,
-            following: following.length,
-          });
-        } catch (error) {
-          console.log(error);
-          res
-            .status(500)
-            .json({ error: "uncaught database error: " + error.code }); // todo: don't do this on prod.
+    await users.update({ name: req.params.name }, [{
+      $set: {
+        followers: {
+          $cond: [
+            {
+              $in: [user._id.toString(), "$followers"]
+            },
+            {
+              $setDifference: ["$followers", [user._id.toString()]]
+            },
+            {
+              $concatArrays: ["$followers", [user._id.toString()]]
+            }
+          ]
         }
+      }
+    }])
+    var userDB = await findUserData(req.params.name)
+    if (userDB) {
+      var following = await users.find({ followers: { $all: [userDB._id.toString()] } })
+      if (userDB.followers.includes(user._id.toString())) {
+        res.json({
+          ok: "now following",
+          action: "follow",
+          followers: userDB.followers.length,
+          following: following.length,
+        });
+        addMessage(
+          userDB._id,
+          `<a href='/users/${user.name}'>@${user.name}</a> is now following you.`
+        );
       } else {
-        //follow
-        try {
-          await users.update(
-            { name: followUser.name },
-            { $push: { followers: user._id.toString() } }
-          );
-          addMessage(
-            followUser.name,
-            `<a href='/users/${user.name}'>@${user.name}</a> is now following you.`
-          );
-
-          var following = await users.find({ followers: { $all: [followUser._id.toString()] } })
-
-          res.json({
-            ok: "now following",
-            action: "follow",
-            followers: followers.length + 1,
-            following: following.length,
-          });
-        } catch (error) {
-          console.log(error);
-          res
-            .status(500)
-            .json({ error: "uncaught database error: " + error.code }); // todo: don't do this on prod.
-        }
+        res.json({
+          ok: "unfollowing",
+          action: "unfollow",
+          followers: userDB.followers.length,
+          following: following.length,
+        });
       }
     } else {
       res.status(404).json({ error: "no user found" });
@@ -782,15 +977,38 @@ app.get('/:user', async (req, res, next) => {
   var username = req.params.user
   var user = await findUserData(username)
   if (user) {
-    console.log('user found')
     res.redirect(`/users/${username}`)
   } else {
     next()
   }
 })
 
+// socket.io live stuff (fun)
+
+var connected = []
+
+io.on('connection', async (socket) => {
+  if (socket.handshake.headers.cookie) {
+    const cookies = cookie.parse(socket.handshake.headers.cookie)
+    var tokenUser = findUser(cookies.token)
+    if (tokenUser) {
+      var user = await findUserDataByID(tokenUser.id)
+      var msgs = await messages.find({ to: user._id.toString(), read: false })
+      socket.emit('updateMessageCount', msgs.length)
+      connected.push({
+        id: user._id.toString(),
+        socket: socket
+      })
+
+    } else {
+      socket.disconnect(true)
+    }
+  }
+});
+
 app.use((req, res, next) => {
   // 404 page always last
+  console.log(`404 at ${req.path}`)
   var user = res.locals.requester,
     loggedIn = res.locals.loggedIn;
   res.status(404).send(
@@ -827,7 +1045,7 @@ function findUserData(name) {
 function findUserDataByID(id) {
   id = id.toString()
   if (id.length !== 24) {
-    id = "000000000000000000000000" // if the id isn't 12 bytes, use a placeholder
+    id = "000000000000000000000001" // if the id isn't 12 bytes, use a placeholder. // todo, should this be the ghost?
   }
 
   return new Promise(async (resolve, reject) => {
@@ -840,18 +1058,35 @@ function findUserDataByID(id) {
   });
 }
 
-function addMessage(name, text, time = Date.now()) {
+function findSocketsByID(id) {
+  id = id.toString()
+  return connected.filter(s => s.id == id)
+}
+
+function addMessage(id, text, time = Date.now()) {
   return new Promise(async (resolve, reject) => {
     try {
-      var user = await findUserData(name),
-        messages = user.messages;
+      var user = await findUserDataByID(id)
 
-      messages.unread.push({
-        content: text,
-        time
-      });
-      var update = await users.update({ name: name }, { $set: { messages } });
-      resolve(update);
+      if (user) {
+        const message = {
+          content: text,
+          to: user._id.toString(),
+          read: false,
+          time
+        }
+
+        var update = await messages.insert(message)
+
+        var msgs = await messages.find({ to: user._id.toString(), read: false })
+        var sockets = findSocketsByID(user._id)
+        sockets.forEach(s => {
+          s.socket.emit('updateMessageCount', msgs.length)
+        })
+        resolve(update);
+      } else {
+        reject('no user found')
+      }
     } catch (error) {
       reject(Error(error));
     }
@@ -899,6 +1134,6 @@ function paginate(array, page_size, page_number) {
   return array.slice((page_number - 1) * page_size, page_number * page_size);
 }
 
-app.listen(port, () => {
+http.listen(port, () => {
   console.log(`listening on http://localhost:${port}`);
 });
