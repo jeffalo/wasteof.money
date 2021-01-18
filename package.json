@@ -1,7 +1,7 @@
 {
   "name": "social",
   "version": "1.0.0",
-  "description": "",
+  "description": "wasteof.money is a social media with aspects inspired from Twitter and Scratch.",
   "main": "index.js",
   "scripts": {
     "start": "npm run serve",
@@ -12,7 +12,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "GPLv3",
+  "license": "GPL-3.0-or-later",
   "dependencies": {
     "autoprefixer": "^10.2.1",
     "bcrypt": "^5.0.0",
@@ -33,10 +33,21 @@
     "socket.io": "^3.1.0"
   },
   "devDependencies": {
-    "nodemon": "^2.0.7",
-    "tailwindcss": "^1.9.6"
+    "tailwindcss": "^2",
+    "nodemon": "^2.0.7"
   },
   "engines": {
     "node": "12.x"
-  }
+  },
+  "directories": {
+    "doc": "docs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jeffalo/wasteof.money.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jeffalo/wasteof.money/issues"
+  },
+  "homepage": "https://github.com/jeffalo/wasteof.money#readme"
 }

@@ -9,7 +9,7 @@
         
         <h1>wasteof.money docs</h1>
         <div class="md:flex flex-col md:flex-row md:min-h-screen w-full mt-4">
-            <div class="flex flex-col w-full md:w-64 text-gray-700 bg-white dark-mode:text-gray-200 dark-mode:bg-gray-800 flex-shrink-0 mr-5 border-t-2 border-indigo-600 rounded" >
+            <div class="flex flex-col w-full md:w-64 text-gray-700 bg-white dark-mode:text-gray-200 dark-mode:bg-gray-800 flex-shrink-0 mr-5 border-t-2 border-indigo-500 rounded" >
               <nav class="flex-grow md:block pb-4 md:pb-0 md:overflow-y-auto">
                 <% docarray.map((docarray)=>{ %>
                     <a class="block px-8 py-4 text-sm font-semibold text-gray-900 rounded-none hover:text-gray-900 focus:text-gray-900 border-b border-gray-400 <%= doc.meta.url == docarray.data.url? 'bg-indigo-100' : 'bg-white hover:bg-gray-100 transition duration-200' %>" href="/docs/<%= docarray.data.url %>">
@@ -23,7 +23,7 @@
               <article class='markdown'>
                 <h1><%- doc.meta.title %></h1>
                 <% if(doc.meta.author) { %>
-                <span class='block italic text-gray-600'>author: <a href="/users/<%= doc.meta.author %>">@<%= doc.meta.author %></a></span>
+                <span class='block italic text-gray-500'>author: <a href="/users/<%= doc.meta.author %>">@<%= doc.meta.author %></a></span>
                 <% } %>
                 <%- doc.body %>
                 <a class='block text-sm' href="https://github.com/jeffalo/wasteof.money/blob/master/docs/<%= doc.meta.url %>.md">(view this doc on github)</a>
