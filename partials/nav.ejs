@@ -8,36 +8,36 @@
         <div class="flex w-full content-center justify-between md:w-1/2 md:justify-end">
             <ul class="list-reset flex justify-between flex-1 md:flex-none items-center">
                 <li class="mr-3">
-                    <a class="inline-block font-normal py-2 px-4 <%= active=='home' ? 'text-white no-underline' : 'text-gray-600 no-underline hover:text-gray-200 hover:text-underline' %>" href="/">Home</a>
+                    <a class="inline-block font-normal py-2 px-4 <%= active=='home' ? 'text-white no-underline' : 'text-gray-500 no-underline hover:text-gray-200 hover:text-underline' %>" href="/">Home</a>
                 </li>
                 <li class="mr-3">
-                    <a class="inline-block font-normal py-2 px-4 <%= active=='explore' ? 'text-white no-underline' : 'text-gray-600 no-underline hover:text-gray-200 hover:text-underline' %>" href="/explore">Explore</a>
+                    <a class="inline-block font-normal py-2 px-4 <%= active=='explore' ? 'text-white no-underline' : 'text-gray-500 no-underline hover:text-gray-200 hover:text-underline' %>" href="/explore">Explore</a>
                 </li>
                 <%if (loggedIn) { %>
                 <li class="mr-3">
-                    <a class="inline-block font-normal py-2 px-4 <%= active=='user_'+user.name ? 'text-white no-underline' : 'text-gray-600 no-underline hover:text-gray-200 hover:text-underline' %>"
+                    <a class="inline-block font-normal py-2 px-4 <%= active=='user_'+user.name ? 'text-white no-underline' : 'text-gray-500 no-underline hover:text-gray-200 hover:text-underline' %>"
                         href="/users/<%= user.name %>"><%= user.name %></a>
                 </li>
                 <li class="mr-3 relative">
-                    <a class="align-middle font-normal inline-block py-2 px-4 <%= active=='messages' ? 'text-white no-underline' : 'text-gray-600 no-underline hover:text-gray-200 hover:text-underline' %>"
+                    <a class="align-middle font-normal inline-block py-2 px-4 <%= active=='messages' ? 'text-white no-underline' : 'text-gray-500 no-underline hover:text-gray-200 hover:text-underline' %>"
                         href="/messages"><span class="iconify" data-icon="uil:bell"></span></a>
                     <div style='top: 2px; right: 5px;' class='absolute hidden bg-red-600 text-white text-xs content-center justify-center items-center w-4 h-4 rounded-md' id='message-count'></div>
                 </li>
                 <li class="mr-3">
-                    <a class="align-middle inline-block font-normal py-2 px-4 <%= active=='settings' ? 'text-white no-underline' : 'text-gray-600 no-underline hover:text-gray-200 hover:text-underline' %>"
+                    <a class="align-middle inline-block font-normal py-2 px-4 <%= active=='settings' ? 'text-white no-underline' : 'text-gray-500 no-underline hover:text-gray-200 hover:text-underline' %>"
                         href="/settings"><span class="iconify" data-icon="uil:cog"></span></a>
                 </li>
                 <li class="mr-3 hidden md:inline">
-                    <a class="align-middle inline-block font-normal py-2 px-4 <%= active=='logout' ? 'text-white no-underline' : 'text-gray-600 no-underline hover:text-gray-200 hover:text-underline' %>"
+                    <a class="align-middle inline-block font-normal py-2 px-4 <%= active=='logout' ? 'text-white no-underline' : 'text-gray-500 no-underline hover:text-gray-200 hover:text-underline' %>"
                         href="/logout"><span class="iconify" data-icon="uil:exit"></span></a>
                 </li>
                 <% } else { %>
                 <li class="mr-3">
-                    <a class="align-middle inline-block font-normal py-2 px-4 <%= active=='join' ? 'text-white no-underline' : 'text-gray-600 no-underline hover:text-gray-200 hover:text-underline' %>"
+                    <a class="align-middle inline-block font-normal py-2 px-4 <%= active=='join' ? 'text-white no-underline' : 'text-gray-500 no-underline hover:text-gray-200 hover:text-underline' %>"
                         href="/join">Join</a>
                 </li>
                 <li class="mr-3">
-                    <a class="align-middle inline-block font-normal py-2 px-4 <%= active=='login' ? 'text-white no-underline' : 'text-gray-600 no-underline hover:text-gray-200 hover:text-underline' %>"
+                    <a class="align-middle inline-block font-normal py-2 px-4 <%= active=='login' ? 'text-white no-underline' : 'text-gray-500 no-underline hover:text-gray-200 hover:text-underline' %>"
                         href="/login">Login</a>
                 </li>
                 <% } %>
