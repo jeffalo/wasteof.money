@@ -37,7 +37,7 @@ users.createIndex("name", { unique: true });
     name: "ghost",
     password: '',
     followers: [],
-    verified: true
+    admin: true
   }
 
   var findGhostUser = await users.findOne({ _id: monk.id('000000000000000000000000') })
@@ -846,6 +846,31 @@ app.post("/posts/:post/comment", checkLoggedIn(), async function (req, res, next
     }
   } else {
     res.status(415).json({ error: "must send json data" });
+  }
+})
+
+app.delete("/posts/:post", checkLoggedIn(), async function (req, res, next) {
+  var user = res.locals.requester;
+  var post = await posts.findOne({ _id: req.params.post })
+  if (req.xhr) {
+    if (post) {
+      // check if the requester is the creator of the post OR is an admin
+      if (user.admin || post.poster.toString() == user._id.toString()) {
+        try {
+          await posts.remove({ _id: post._id })
+          res.json({ ok: 'removed post' })
+        } catch (err) {
+          console.log(err)
+          res.status(500).json({ error: 'something went wrong on the server' })
+        }
+      } else {
+        res.status(403).json({ error: 'requested post for deletion is not made by the same user who requseted' })
+      }
+    } else {
+      res.status(404).json({ error: 'no post found' })
+    }
+  } else {
+    res.status(415).json({ error: "must be xhr" });
   }
 })
 
