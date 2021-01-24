@@ -818,26 +818,31 @@ app.get("/api/posts/:post/comments", async function (req, res) {
 
 app.post("/posts/:post/comment", checkLoggedIn(), async function (req, res, next) {
   var user = res.locals.requester;
-  var post = await posts.findOne({_id:req.params.post})
+  var post = await posts.findOne({ _id: req.params.post })
   if (req.is("application/json")) {
-    if(post){
-      comments
-      .insert({
-        content: req.body.content,
-        poster: user._id.toString(),
-        post: req.params.post.toString(),
-        time: Date.now()
-      })
-      .then(async comment => {
-        await addMessage(post.poster, `<a href='/users/${user.name}'>@${user.name}</a> commented on <a href='/posts/${post._id}'>your post</a>.`)
-        res.json({ ok: "made comment", id: comment._id });
-      })
-      .catch(err => {
-        res.status(500).json({ error: "uncaught server error" });
-        console.error(err);
-      });
+    if (post) {
+      var content = req.body.content.trim()
+      if (content) {
+        comments
+          .insert({
+            content: content,
+            poster: user._id.toString(),
+            post: req.params.post.toString(),
+            time: Date.now()
+          })
+          .then(async comment => {
+            await addMessage(post.poster, `<a href='/users/${user.name}'>@${user.name}</a> commented on <a href='/posts/${post._id}'>your post</a>.`)
+            res.json({ ok: "made comment", id: comment._id });
+          })
+          .catch(err => {
+            res.status(500).json({ error: "uncaught server error" });
+            console.error(err);
+          });
+      } else {
+        res.status(400).json({ error: 'message cannot be empty' })
+      }
     } else {
-      res.status(404).json({ error:'no post found' })
+      res.status(404).json({ error: 'no post found' })
     }
   } else {
     res.status(415).json({ error: "must send json data" });
@@ -868,20 +873,25 @@ app.post("/post", checkLoggedIn(), async function (req, res) {
   var user = res.locals.requester;
 
   if (req.is("application/json")) {
-    posts
-      .insert({
-        content: req.body.post,
-        poster: user._id,
-        time: Date.now(),
-        loves: []
-      })
-      .then(post => {
-        res.json({ ok: "made post", id: post._id });
-      })
-      .catch(err => {
-        res.status(500).json({ error: "uncaught server error" });
-        console.error(err);
-      });
+    var content = req.body.post.trim()
+    if (content) {
+      posts
+        .insert({
+          content: content,
+          poster: user._id,
+          time: Date.now(),
+          loves: []
+        })
+        .then(post => {
+          res.json({ ok: "made post", id: post._id });
+        })
+        .catch(err => {
+          res.status(500).json({ error: "uncaught server error" });
+          console.error(err);
+        });
+    } else {
+      res.status(400).json({ error: "post cannot be empty" })
+    }
   } else {
     res.status(415).json({ error: "must send json data" });
   }
