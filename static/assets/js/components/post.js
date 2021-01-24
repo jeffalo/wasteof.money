@@ -28,9 +28,7 @@ export default {
 			</h4>
 		</a>
 		<component :is="dontLink? 'span' : 'a'" :href="'/posts/'+post._id" class="font-normal text-black w-full">
-			<p class="text-base text-gray-500 leading-normal wasteof-break-words">
-				{{ post.content }}
-			</p>
+			<p class="text-base text-gray-500 leading-normal wasteof-break-words whitespace-pre-line">{{ post.content }}</p>
 			<p class="text-base text-gray-500 italic leading-normal">
 				{{ postIdInfo }}
 			</p>

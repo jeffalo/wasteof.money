@@ -19,7 +19,7 @@
             <form @submit.prevent="comment(commentInput)">
                 <div> <!-- todo: instead of using required attribute, it would be cool to have the post button fade in if theres any input -->
                     <textarea required v-model="commentInput" class="appearance-none w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:shadow-outline-blue focus:border-indigo-300 focus:z-10 sm:text-sm sm:leading-5" :placeholder="`Write something ${commentWord}...`"></textarea>
-                    <input type="submit" value="Post" class="px-3 py-2 rounded-md bg-indigo-500 text-white cursor-pointer">
+                    <input type="submit" value="Post" class="px-3 py-2 rounded-md bg-indigo-500 text-white cursor-pointer mb-2">
                 </div>
             </form>
             <comment v-for="comment in comments" :key="comment._id" :comment="comment" />
