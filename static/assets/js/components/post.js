@@ -4,41 +4,41 @@ export default {
 			type: Object,
 			required: true
 		},
-		dontLink:{
+		dontLink: {
 			type: Boolean
 		},
 		loggedInUserId: {}
 	},
-  methods: {
-	onclick () { this.$parent.lovePost(this.post._id) },
-	async deletePost() {
-		var deleteRes = await fetch(`/posts/${this.post._id}`, {
-			method: 'DELETE',
-			headers: {
-				'X-Requested-With': 'XMLHttpRequest'
-			}
-		})
-		var deleteJSON = await deleteRes.json()
-		console.log(deleteJSON)
-		if (deleteJSON.ok) {
-			document.location.href = '/'
-		}
-		if (deleteJSON.error) {
-			Swal.fire({
-				icon: 'error',
-				title: 'Failed to delete post',
-				text: deleteJSON.error,
-				footer: '<a href="https://github.com/jeffalo/wasteof.money/issues" target="_blank" rel="noopener">Report issues</a>'
+	methods: {
+		onclick() { this.$parent.lovePost(this.post._id) },
+		async deletePost() {
+			var deleteRes = await fetch(`/posts/${this.post._id}`, {
+				method: 'DELETE',
+				headers: {
+					'X-Requested-With': 'XMLHttpRequest'
+				}
 			})
+			var deleteJSON = await deleteRes.json()
+			console.log(deleteJSON)
+			if (deleteJSON.ok) {
+				document.location.href = '/'
+			}
+			if (deleteJSON.error) {
+				Swal.fire({
+					icon: 'error',
+					title: 'Failed to delete post',
+					text: deleteJSON.error,
+					footer: '<a href="https://github.com/jeffalo/wasteof.money/issues" target="_blank" rel="noopener">Report issues</a>'
+				})
+			}
 		}
-	}
-  },
-  computed: {
-    postIdInfo () {
-		return new Date(this.post.time).toLocaleDateString("en-US") + " " + new Date(this.post.time).toLocaleTimeString("en-US") + " - " + this.post._id
-    }
-  },
-	template: 
+	},
+	computed: {
+		postIdInfo() {
+			return new Date(this.post.time).toLocaleDateString("en-US") + " " + new Date(this.post.time).toLocaleTimeString("en-US") + " - " + this.post._id
+		}
+	},
+	template:
 `
 <div class="max-w-2xl flex p-6 mx-auto my-5 bg-white rounded-lg shadow-md" :class="{'bg-indigo-100': post.highlight}">
 	<div class="pt-1 w-full">
