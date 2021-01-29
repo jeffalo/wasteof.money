@@ -858,6 +858,7 @@ app.delete("/posts/:post", checkLoggedIn(), async function (req, res, next) {
       if (user.admin || post.poster.toString() == user._id.toString()) {
         try {
           await posts.remove({ _id: post._id })
+          await comments.remove({ post:post._id.toString() })
           res.json({ ok: 'removed post' })
         } catch (err) {
           console.log(err)
